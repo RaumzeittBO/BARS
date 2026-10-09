@@ -23,9 +23,13 @@ export function PrinterSettingsModal({
 
   const loadDevices = async () => {
     setIsSearching(true)
+    setTestingStatus(null)
     try {
       const list = await barsPrinterService.listPairedDevices()
       setPairedDevices(list)
+    } catch (error) {
+      setPairedDevices([])
+      setTestingStatus(error instanceof Error ? error.message : 'No se pudieron consultar las impresoras Bluetooth.')
     } finally {
       setIsSearching(false)
     }
@@ -87,8 +91,8 @@ export function PrinterSettingsModal({
           payment: { method: 'cash', cashAmount: 25, qrAmount: 0, cashReceived: 50, change: 25 },
           paymentStatus: 'paid',
         }
-        await barsPrinterService.reprintOrder(testOrder)
-        setTestingStatus('Prueba impresa correctamente.')
+        const printResult = await barsPrinterService.reprintOrder(testOrder)
+        setTestingStatus(printResult.success ? 'Prueba impresa correctamente.' : `Error: ${printResult.error || 'No se pudo imprimir la prueba.'}`)
       } else {
         setTestingStatus(`Error: ${res.message}`)
       }

@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import PachaxBluetoothPrinter, { type NativePairedBluetoothDevice } from '../../plugins/pachaxBluetoothPrinter'
+import PachaxBluetoothPermissions from '../../plugins/pachaxBluetoothPermissions'
 import type { Order, PrinterConfig } from '../../types'
 import { formatCurrency, formatExtrasList } from '../../lib/format'
 import { formatTicketDateTime } from '../../lib/escpos'
@@ -160,16 +161,27 @@ class BarsPrinterService {
     return Capacitor.getPlatform() === 'android'
   }
 
+  private async ensureBluetoothConnectPermission(): Promise<void> {
+    const status = await PachaxBluetoothPermissions.checkPermissions()
+    if (status.bluetoothConnect === 'granted' || status.bluetoothConnect === 'notRequired') return
+
+    const requested = await PachaxBluetoothPermissions.requestConnectPermission()
+    if (requested.bluetoothConnect !== 'granted' && requested.bluetoothConnect !== 'notRequired') {
+      throw new Error('Autoriza Dispositivos cercanos para BARS en los ajustes de Android.')
+    }
+  }
+
   async listPairedDevices(): Promise<NativePairedBluetoothDevice[]> {
     if (!this.isAndroid()) {
       return []
     }
     try {
+      await this.ensureBluetoothConnectPermission()
       const res = await PachaxBluetoothPrinter.listPairedDevices()
       return res.devices || []
     } catch (err) {
       console.warn('Error al listar dispositivos Bluetooth:', err)
-      return []
+      throw err
     }
   }
 
@@ -179,9 +191,10 @@ class BarsPrinterService {
       return { success: false, message: 'No hay ninguna impresora configurada.' }
     }
     if (!this.isAndroid()) {
-      return { success: true, message: 'Modo Web: conexión simulada correctamente.' }
+      return { success: false, message: 'La impresión Bluetooth requiere la aplicación Android.' }
     }
     try {
+      await this.ensureBluetoothConnectPermission()
       const res = await PachaxBluetoothPrinter.connect({ address: targetAddress })
       return {
         success: res.connected,
@@ -303,9 +316,7 @@ class BarsPrinterService {
     }
 
     if (!this.isAndroid()) {
-      // En entorno Web, registramos éxito para no bloquear la app
-      console.log('Ticket generado en modo Web (vista previa/browser fallback listo).')
-      return { success: true }
+      return { success: false, error: 'La impresión Bluetooth requiere la aplicación Android.' }
     }
 
     if (!this.config.deviceAddress) {
@@ -313,6 +324,7 @@ class BarsPrinterService {
     }
 
     try {
+      await this.ensureBluetoothConnectPermission()
       // Conectar si no está conectado
       await PachaxBluetoothPrinter.connect({ address: this.config.deviceAddress })
 
