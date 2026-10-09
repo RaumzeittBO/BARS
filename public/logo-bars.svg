@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <!-- BARS Brandmark -->
+  <g transform="translate(10, 8)">
+    <!-- Symbol / Shield / Grill Badge -->
+    <rect x="0" y="2" width="60" height="60" rx="16" fill="#141414" stroke="#262626" stroke-width="2"/>
+    <path d="M14 20H46M14 32H46M14 44H46" stroke="#FF6A00" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="30" cy="32" r="7" fill="#FF6A00" />
+    <circle cx="30" cy="32" r="3" fill="#FFFFFF" />
+
+    <!-- Typography: BARS -->
+    <text x="76" y="47" font-family="'Inter', -apple-system, sans-serif" font-weight="900" font-size="38" letter-spacing="3" fill="#FFFFFF">
+      BAR<tspan fill="#FF6A00">S</tspan>
+    </text>
+    
+    <!-- Subtitle: FOOD & DRINKS / GESTIÓN -->
+    <text x="78" y="60" font-family="'Inter', -apple-system, sans-serif" font-weight="700" font-size="9.5" letter-spacing="3.5" fill="#9E9E9E">
+      BY PACHAX
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,6 @@
+{
+  "appId": "net.pachax.bars",
+  "appName": "BARS",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
