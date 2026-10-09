@@ -32,23 +32,16 @@ service cloud.firestore {
       return /databases/$(database)/documents/restaurants/$(restaurantId)/members/$(request.auth.uid);
     }
 
-    function isProjectOwner() {
-      return isSignedIn() && (
-        request.auth.token.email == 'gfabrigtrf@gmail.com' ||
-        request.auth.token.email == 'pachax.bo@gmail.com'
-      );
-    }
-
     function memberData(restaurantId) {
       return get(memberPath(restaurantId)).data;
     }
 
     function isActiveMember(restaurantId) {
-      return isSignedIn() && (isProjectOwner() || (exists(memberPath(restaurantId)) && memberData(restaurantId).active == true));
+      return isSignedIn() && exists(memberPath(restaurantId)) && memberData(restaurantId).active == true;
     }
 
     function hasRole(restaurantId, roles) {
-      return isProjectOwner() || (isActiveMember(restaurantId) && exists(memberPath(restaurantId)) && memberData(restaurantId).role in roles);
+      return isActiveMember(restaurantId) && exists(memberPath(restaurantId)) && memberData(restaurantId).role in roles;
     }
 
     function isValidDayId(dayId) {
@@ -352,14 +345,23 @@ service cloud.firestore {
     match /restaurants/{restaurantId}/members/{uid} {
       allow get: if isSignedIn() && (request.auth.uid == uid || hasRole(restaurantId, ['admin', 'operador']));
       allow list: if hasRole(restaurantId, ['admin', 'operador']);
-      allow create, update: if hasRole(restaurantId, ['admin', 'operador'])
+      allow create: if hasRole(restaurantId, ['admin'])
+        && request.auth.uid != uid
         && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'active', 'createdAt'])
         && request.resource.data.uid == uid
         && request.resource.data.email is string
         && request.resource.data.displayName is string
         && request.resource.data.role in ['admin', 'operador', 'caja', 'cocina', 'pedidos']
         && request.resource.data.active is bool;
-      allow delete: if hasRole(restaurantId, ['admin', 'operador']) && request.auth.uid != uid;
+      allow update: if hasRole(restaurantId, ['admin'])
+        && request.auth.uid != uid
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'active', 'createdAt'])
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.displayName is string
+        && request.resource.data.role in ['admin', 'operador', 'caja', 'cocina', 'pedidos']
+        && request.resource.data.active is bool;
+      allow delete: if hasRole(restaurantId, ['admin']) && request.auth.uid != uid;
     }
 
     match /restaurants/{restaurantId}/catalog/{catalogId}/categories/{categoryId} {
