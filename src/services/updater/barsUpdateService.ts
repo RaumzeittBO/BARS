@@ -24,7 +24,7 @@ export interface UpdateCheckResult {
 
 const DEFAULT_MANIFEST_URL =
   import.meta.env.VITE_UPDATER_MANIFEST_URL ||
-  'https://pachax-bars.web.app/updates/bars/update.json'
+  'https://bars-beta.vercel.app/updates/bars/update.json'
 
 class BarsUpdateService {
   private isChecking = false

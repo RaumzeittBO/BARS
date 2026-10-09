@@ -201,7 +201,7 @@ export function useAuthStore() {
     async signIn(email: string, password: string) {
       setState({ error: null, status: 'authenticating' })
 
-      if (email.endsWith('@dev.local')) {
+      if (import.meta.env.DEV && email.endsWith('@dev.local')) {
         const role = email.split('@')[0] as UserRole
         if (['admin', 'operador', 'caja', 'cocina', 'pedidos'].includes(role)) {
           setState({
@@ -241,7 +241,7 @@ export function useAuthStore() {
       window.location.reload()
     },
     setRoleForDemo(role: UserRole) {
-      if (state.mode === 'local') {
+      if (import.meta.env.DEV && state.mode === 'local') {
         setState({
           role,
           userDisplayName: `Test ${role.toUpperCase()}`,
