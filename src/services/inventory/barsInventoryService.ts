@@ -1,3 +1,15 @@
+import {
+  collection,
+  deleteDoc,
+  doc,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  type Unsubscribe,
+} from 'firebase/firestore'
+import { getFirebaseContext } from '../../lib/firebase'
 import type { Order, ProductRecipe, RawMaterial, StockMovement } from '../../types'
 
 const RAW_MATERIALS_KEY = 'bars:raw_materials'
@@ -22,16 +34,19 @@ class BarsInventoryService {
   private movements: StockMovement[] = []
   private deductedOrderIds: Set<string> = new Set()
   private listeners: Array<() => void> = []
+  private unsubscribers: Unsubscribe[] = []
+  private syncInitialized = false
 
   constructor() {
-    this.loadData()
+    this.loadLocalData()
+    void this.initFirestoreSync()
   }
 
-  private loadData() {
+  private loadLocalData() {
     try {
       const rawMat = localStorage.getItem(RAW_MATERIALS_KEY)
       this.materials = rawMat ? JSON.parse(rawMat) : INITIAL_RAW_MATERIALS
-      if (!rawMat) this.saveMaterials()
+      if (!rawMat) this.saveMaterialsLocal()
 
       const rawRec = localStorage.getItem(RECIPES_KEY)
       if (rawRec) {
@@ -51,6 +66,87 @@ class BarsInventoryService {
     }
   }
 
+  private async initFirestoreSync() {
+    if (this.syncInitialized || typeof window === 'undefined') return
+    try {
+      const context = await getFirebaseContext()
+      if (!context) return
+      this.syncInitialized = true
+
+      // 1. Sincronizar insumos / materias primas
+      const materialsRef = collection(context.db, 'restaurants', context.restaurantId, 'inventory_materials')
+      const unsubMaterials = onSnapshot(materialsRef, (snapshot) => {
+        if (!snapshot.empty) {
+          const list: RawMaterial[] = []
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data() as RawMaterial)
+          })
+          this.materials = list
+          this.saveMaterialsLocal()
+          this.notify()
+        } else if (this.materials.length > 0) {
+          // Inicializar en Firestore con los insumos iniciales si está vacía
+          for (const mat of this.materials) {
+            void setDoc(doc(context.db, 'restaurants', context.restaurantId, 'inventory_materials', mat.id), mat).catch(() => undefined)
+          }
+        }
+      }, (err) => {
+        console.warn('Inventory materials firestore sync notice:', err.message)
+      })
+      this.unsubscribers.push(unsubMaterials)
+
+      // 2. Sincronizar movimientos recientes
+      const movementsRef = collection(context.db, 'restaurants', context.restaurantId, 'inventory_movements')
+      const movementsQuery = query(movementsRef, orderBy('timestamp', 'desc'), limit(500))
+      const unsubMovements = onSnapshot(movementsQuery, (snapshot) => {
+        if (!snapshot.empty) {
+          const list: StockMovement[] = []
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data() as StockMovement)
+          })
+          this.movements = list
+          this.saveMovementsLocal()
+          this.notify()
+        }
+      }, (err) => {
+        console.warn('Inventory movements firestore sync notice:', err.message)
+      })
+      this.unsubscribers.push(unsubMovements)
+
+      // 3. Sincronizar recetas
+      const recipesRef = collection(context.db, 'restaurants', context.restaurantId, 'inventory_recipes')
+      const unsubRecipes = onSnapshot(recipesRef, (snapshot) => {
+        if (!snapshot.empty) {
+          snapshot.forEach((docSnap) => {
+            const recipe = docSnap.data() as ProductRecipe
+            this.recipes.set(recipe.productId, recipe)
+          })
+          this.saveRecipesLocal()
+          this.notify()
+        }
+      }, (err) => {
+        console.warn('Inventory recipes firestore sync notice:', err.message)
+      })
+      this.unsubscribers.push(unsubRecipes)
+
+      // 4. Sincronizar pedidos deducidos (idempotencia multi-dispositivo)
+      const deductionsRef = collection(context.db, 'restaurants', context.restaurantId, 'inventory_deductions')
+      const unsubDeductions = onSnapshot(deductionsRef, (snapshot) => {
+        if (!snapshot.empty) {
+          snapshot.forEach((docSnap) => {
+            this.deductedOrderIds.add(docSnap.id)
+          })
+          this.saveDeductedOrdersLocal()
+        }
+      }, (err) => {
+        console.warn('Inventory deductions firestore sync notice:', err.message)
+      })
+      this.unsubscribers.push(unsubDeductions)
+    } catch (e) {
+      console.warn('Failed to initialize Firestore inventory sync:', e)
+    }
+  }
+
   private notify() {
     this.listeners.forEach((fn) => fn())
   }
@@ -62,42 +158,38 @@ class BarsInventoryService {
     }
   }
 
-  private saveMaterials() {
+  private saveMaterialsLocal() {
     try {
       localStorage.setItem(RAW_MATERIALS_KEY, JSON.stringify(this.materials))
     } catch (e) {
-      console.error('Error saving materials:', e)
+      console.error('Error saving materials locally:', e)
     }
-    this.notify()
   }
 
-  private saveRecipes() {
+  private saveRecipesLocal() {
     try {
       const list = Array.from(this.recipes.values())
       localStorage.setItem(RECIPES_KEY, JSON.stringify(list))
     } catch (e) {
-      console.error('Error saving recipes:', e)
+      console.error('Error saving recipes locally:', e)
     }
-    this.notify()
   }
 
-  private saveMovements() {
+  private saveMovementsLocal() {
     try {
-      // Limitar a los 1000 movimientos más recientes para rendimiento
       const trimmed = this.movements.slice(0, 1000)
       localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(trimmed))
     } catch (e) {
-      console.error('Error saving movements:', e)
+      console.error('Error saving movements locally:', e)
     }
-    this.notify()
   }
 
-  private saveDeductedOrders() {
+  private saveDeductedOrdersLocal() {
     try {
       const array = Array.from(this.deductedOrderIds).slice(-1000)
       localStorage.setItem(DEDUCTED_ORDERS_KEY, JSON.stringify(array))
     } catch (e) {
-      console.error('Error saving deducted orders:', e)
+      console.error('Error saving deducted orders locally:', e)
     }
   }
 
@@ -133,7 +225,19 @@ class BarsInventoryService {
       this.materials.push(saved)
     }
 
-    this.saveMaterials()
+    this.saveMaterialsLocal()
+    this.notify()
+
+    void (async () => {
+      if (typeof window === 'undefined') return
+      try {
+        const ctx = await getFirebaseContext()
+        if (ctx) {
+          await setDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'inventory_materials', saved.id), saved)
+        }
+      } catch {}
+    })()
+
     return saved
   }
 
@@ -141,7 +245,19 @@ class BarsInventoryService {
     const index = this.materials.findIndex((m) => m.id === id)
     if (index >= 0) {
       this.materials.splice(index, 1)
-      this.saveMaterials()
+      this.saveMaterialsLocal()
+      this.notify()
+
+      void (async () => {
+        if (typeof window === 'undefined') return
+        try {
+          const ctx = await getFirebaseContext()
+          if (ctx) {
+            await deleteDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'inventory_materials', id))
+          }
+        } catch {}
+      })()
+
       return true
     }
     return false
@@ -171,7 +287,7 @@ class BarsInventoryService {
 
     material.currentStock = Math.round(newStock * 100) / 100
     material.updatedAt = new Date().toISOString()
-    this.saveMaterials()
+    this.saveMaterialsLocal()
 
     const movement: StockMovement = {
       id: `mov-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -188,7 +304,22 @@ class BarsInventoryService {
     }
 
     this.movements.unshift(movement)
-    this.saveMovements()
+    this.saveMovementsLocal()
+    this.notify()
+
+    void (async () => {
+      if (typeof window === 'undefined') return
+      try {
+        const ctx = await getFirebaseContext()
+        if (ctx) {
+          await Promise.all([
+            setDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'inventory_movements', movement.id), movement),
+            setDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'inventory_materials', material.id), material),
+          ])
+        }
+      } catch {}
+    })()
+
     return movement
   }
 
@@ -206,7 +337,18 @@ class BarsInventoryService {
 
   saveRecipe(recipe: ProductRecipe) {
     this.recipes.set(recipe.productId, recipe)
-    this.saveRecipes()
+    this.saveRecipesLocal()
+    this.notify()
+
+    void (async () => {
+      if (typeof window === 'undefined') return
+      try {
+        const ctx = await getFirebaseContext()
+        if (ctx) {
+          await setDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'inventory_recipes', recipe.productId), recipe)
+        }
+      } catch {}
+    })()
   }
 
   getLowStockAlerts(): RawMaterial[] {
@@ -224,7 +366,6 @@ class BarsInventoryService {
     deductedCount: number
     details: { rawMaterialName: string; quantity: number }[]
   }> {
-    // Protección contra doble descuento
     if (this.deductedOrderIds.has(order.id)) {
       return { success: true, deductedCount: 0, details: [] }
     }
@@ -241,12 +382,10 @@ class BarsInventoryService {
 
     for (const item of order.items) {
       const itemQty = item.quantity
-      const recipe = this.getRecipe(item.id) // O por ID de producto
+      const recipe = this.getRecipe(item.id)
 
       if (recipe && recipe.ingredients.length > 0) {
-        // Usar receta configurada explícitamente
         for (const ing of recipe.ingredients) {
-          // Si el modificador excluye este ingrediente (ej: "Sin cebolla")
           if (ing.modifierOption) {
             const hasOptionExclusion = item.modifiers.options.some((opt) =>
               opt.toLowerCase().includes(ing.modifierOption!.toLowerCase())
@@ -256,16 +395,13 @@ class BarsInventoryService {
           addDeduction(ing.rawMaterialId, ing.quantity * itemQty)
         }
       } else {
-        // Fallback inteligente para hamburguesas y combos por convención de nombre
         const lowerName = item.name.toLowerCase()
         const isBurger = lowerName.includes('hamburguesa') || lowerName.includes('burger') || lowerName.includes('clasica') || lowerName.includes('bacon')
 
         if (isBurger) {
-          // Pan
           const pan = this.materials.find((m) => m.name.toLowerCase().includes('pan'))
           if (pan) addDeduction(pan.id, 1 * itemQty)
 
-          // Carne (detecta doble/triple/cuadruple)
           const carne = this.materials.find((m) => m.name.toLowerCase().includes('carne'))
           if (carne) {
             let numCarnes = 1
@@ -275,30 +411,25 @@ class BarsInventoryService {
             addDeduction(carne.id, numCarnes * itemQty)
           }
 
-          // Queso
           const queso = this.materials.find((m) => m.name.toLowerCase().includes('queso'))
           if (queso) addDeduction(queso.id, 1 * itemQty)
 
-          // Cebolla si no dice "Sin cebolla"
           const sinCebolla = item.modifiers.options.some((opt) => opt.toLowerCase().includes('sin cebolla'))
           const cebolla = this.materials.find((m) => m.name.toLowerCase().includes('cebolla'))
           if (cebolla && !sinCebolla) addDeduction(cebolla.id, 1 * itemQty)
         }
 
-        // Papas
         if (lowerName.includes('papa') || lowerName.includes('combo')) {
           const papas = this.materials.find((m) => m.name.toLowerCase().includes('papa'))
           if (papas) addDeduction(papas.id, 1 * itemQty)
         }
 
-        // Bebida
         if (lowerName.includes('soda') || lowerName.includes('gaseosa') || lowerName.includes('coca') || lowerName.includes('combo')) {
           const bebida = this.materials.find((m) => m.name.toLowerCase().includes('gaseosa'))
           if (bebida) addDeduction(bebida.id, 1 * itemQty)
         }
       }
 
-      // Descuento por extras agregados (ej: 'Carne extra', 'Queso extra', 'Tocino')
       if (item.modifiers.extras && item.modifiers.extras.length > 0) {
         for (const extra of item.modifiers.extras) {
           const extraLower = extra.name.toLowerCase()
@@ -316,7 +447,6 @@ class BarsInventoryService {
       }
     }
 
-    // Aplicar deducciones
     const details: { rawMaterialName: string; quantity: number }[] = []
     for (const item of deductions.values()) {
       this.registerMovement(
@@ -330,9 +460,22 @@ class BarsInventoryService {
       details.push({ rawMaterialName: item.name, quantity: item.quantity })
     }
 
-    // Marcar pedido como deducido
     this.deductedOrderIds.add(order.id)
-    this.saveDeductedOrders()
+    this.saveDeductedOrdersLocal()
+
+    void (async () => {
+      if (typeof window === 'undefined') return
+      try {
+        const ctx = await getFirebaseContext()
+        if (ctx) {
+          await setDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'inventory_deductions', order.id), {
+            orderId: order.id,
+            deductedAt: new Date().toISOString(),
+            details,
+          })
+        }
+      } catch {}
+    })()
 
     return {
       success: true,
@@ -341,15 +484,11 @@ class BarsInventoryService {
     }
   }
 
-  /**
-   * Reversión de inventario en caso de cancelación o devolución de venta
-   */
   async restoreStockForOrder(order: Order, userId: string = 'POS'): Promise<boolean> {
     if (!this.deductedOrderIds.has(order.id)) {
-      return false // No se había descontado nada
+      return false
     }
 
-    // Buscar movimientos previos de esta venta y revertirlos
     const orderMovements = this.movements.filter((m) => m.orderId === order.id && m.type === 'out_sale')
 
     for (const mov of orderMovements) {
@@ -364,8 +503,25 @@ class BarsInventoryService {
     }
 
     this.deductedOrderIds.delete(order.id)
-    this.saveDeductedOrders()
+    this.saveDeductedOrdersLocal()
+
+    void (async () => {
+      if (typeof window === 'undefined') return
+      try {
+        const ctx = await getFirebaseContext()
+        if (ctx) {
+          await deleteDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'inventory_deductions', order.id))
+        }
+      } catch {}
+    })()
+
     return true
+  }
+
+  destroy() {
+    this.unsubscribers.forEach((unsub) => unsub())
+    this.unsubscribers = []
+    this.syncInitialized = false
   }
 }
 

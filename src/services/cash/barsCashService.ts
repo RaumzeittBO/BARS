@@ -1,3 +1,14 @@
+import {
+  collection,
+  doc,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  type Unsubscribe,
+} from 'firebase/firestore'
+import { getFirebaseContext } from '../../lib/firebase'
 import type { CashExpense, CashShift, Order } from '../../types'
 
 const SHIFTS_KEY = 'bars:cash_shifts'
@@ -9,12 +20,15 @@ class BarsCashService {
   private expenses: CashExpense[] = []
   private activeShiftId: string | null = null
   private listeners: Array<() => void> = []
+  private unsubscribers: Unsubscribe[] = []
+  private syncInitialized = false
 
   constructor() {
-    this.loadData()
+    this.loadLocalData()
+    void this.initFirestoreSync()
   }
 
-  private loadData() {
+  private loadLocalData() {
     try {
       const rawShifts = localStorage.getItem(SHIFTS_KEY)
       this.shifts = rawShifts ? JSON.parse(rawShifts) : []
@@ -24,7 +38,6 @@ class BarsCashService {
 
       this.activeShiftId = localStorage.getItem(ACTIVE_SHIFT_ID_KEY) || null
 
-      // Validar si el activeShiftId realmente existe y sigue abierto
       if (this.activeShiftId) {
         const found = this.shifts.find((s) => s.id === this.activeShiftId && s.status === 'open')
         if (!found) {
@@ -39,6 +52,58 @@ class BarsCashService {
     }
   }
 
+  private async initFirestoreSync() {
+    if (this.syncInitialized || typeof window === 'undefined') return
+    try {
+      const context = await getFirebaseContext()
+      if (!context) return
+      this.syncInitialized = true
+
+      // 1. Sincronizar turnos de caja en tiempo real
+      const shiftsRef = collection(context.db, 'restaurants', context.restaurantId, 'cash_shifts')
+      const shiftsQuery = query(shiftsRef, orderBy('openedAt', 'desc'), limit(100))
+      const unsubShifts = onSnapshot(shiftsQuery, (snapshot) => {
+        if (!snapshot.empty) {
+          const list: CashShift[] = []
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data() as CashShift)
+          })
+          this.shifts = list
+
+          // Detectar turno abierto activo
+          const openShift = list.find((s) => s.status === 'open')
+          this.activeShiftId = openShift ? openShift.id : null
+
+          this.saveLocalData()
+          this.notify()
+        }
+      }, (err) => {
+        console.warn('Cash shifts firestore sync notice:', err.message)
+      })
+      this.unsubscribers.push(unsubShifts)
+
+      // 2. Sincronizar gastos de caja en tiempo real
+      const expensesRef = collection(context.db, 'restaurants', context.restaurantId, 'cash_expenses')
+      const expensesQuery = query(expensesRef, orderBy('timestamp', 'desc'), limit(200))
+      const unsubExpenses = onSnapshot(expensesQuery, (snapshot) => {
+        if (!snapshot.empty) {
+          const list: CashExpense[] = []
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data() as CashExpense)
+          })
+          this.expenses = list
+          this.saveLocalData()
+          this.notify()
+        }
+      }, (err) => {
+        console.warn('Cash expenses firestore sync notice:', err.message)
+      })
+      this.unsubscribers.push(unsubExpenses)
+    } catch (e) {
+      console.warn('Failed to initialize Firestore cash sync:', e)
+    }
+  }
+
   private notify() {
     this.listeners.forEach((fn) => fn())
   }
@@ -50,7 +115,7 @@ class BarsCashService {
     }
   }
 
-  private saveData() {
+  private saveLocalData() {
     try {
       localStorage.setItem(SHIFTS_KEY, JSON.stringify(this.shifts))
       localStorage.setItem(EXPENSES_KEY, JSON.stringify(this.expenses))
@@ -60,9 +125,8 @@ class BarsCashService {
         localStorage.removeItem(ACTIVE_SHIFT_ID_KEY)
       }
     } catch (e) {
-      console.error('Error saving cash data:', e)
+      console.error('Error saving cash data locally:', e)
     }
-    this.notify()
   }
 
   getActiveShift(): CashShift | null {
@@ -75,7 +139,6 @@ class BarsCashService {
     responsible: string
     branch?: string
   }): CashShift {
-    // Si ya hay un turno abierto, devolverlo
     const current = this.getActiveShift()
     if (current) return current
 
@@ -97,7 +160,19 @@ class BarsCashService {
 
     this.shifts.unshift(newShift)
     this.activeShiftId = newShift.id
-    this.saveData()
+    this.saveLocalData()
+    this.notify()
+
+    void (async () => {
+      if (typeof window === 'undefined') return
+      try {
+        const ctx = await getFirebaseContext()
+        if (ctx) {
+          await setDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'cash_shifts', newShift.id), newShift)
+        }
+      } catch {}
+    })()
+
     return newShift
   }
 
@@ -119,7 +194,19 @@ class BarsCashService {
     }
 
     this.expenses.unshift(expense)
-    this.saveData()
+    this.saveLocalData()
+    this.notify()
+
+    void (async () => {
+      if (typeof window === 'undefined') return
+      try {
+        const ctx = await getFirebaseContext()
+        if (ctx) {
+          await setDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'cash_expenses', expense.id), expense)
+        }
+      } catch {}
+    })()
+
     return expense
   }
 
@@ -231,12 +318,30 @@ class BarsCashService {
       this.activeShiftId = null
     }
 
-    this.saveData()
+    this.saveLocalData()
+    this.notify()
+
+    void (async () => {
+      if (typeof window === 'undefined') return
+      try {
+        const ctx = await getFirebaseContext()
+        if (ctx) {
+          await setDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'cash_shifts', closedShift.id), closedShift)
+        }
+      } catch {}
+    })()
+
     return closedShift
   }
 
   getShiftHistory(): CashShift[] {
     return [...this.shifts]
+  }
+
+  destroy() {
+    this.unsubscribers.forEach((unsub) => unsub())
+    this.unsubscribers = []
+    this.syncInitialized = false
   }
 }
 

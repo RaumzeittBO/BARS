@@ -32,16 +32,23 @@ service cloud.firestore {
       return /databases/$(database)/documents/restaurants/$(restaurantId)/members/$(request.auth.uid);
     }
 
+    function isProjectOwner() {
+      return isSignedIn() && (
+        request.auth.token.email == 'gfabrigtrf@gmail.com' ||
+        request.auth.token.email == 'pachax.bo@gmail.com'
+      );
+    }
+
     function memberData(restaurantId) {
       return get(memberPath(restaurantId)).data;
     }
 
     function isActiveMember(restaurantId) {
-      return isSignedIn() && memberData(restaurantId).active == true;
+      return isSignedIn() && (isProjectOwner() || (exists(memberPath(restaurantId)) && memberData(restaurantId).active == true));
     }
 
     function hasRole(restaurantId, roles) {
-      return isActiveMember(restaurantId) && memberData(restaurantId).role in roles;
+      return isProjectOwner() || (isActiveMember(restaurantId) && exists(memberPath(restaurantId)) && memberData(restaurantId).role in roles);
     }
 
     function isValidDayId(dayId) {
@@ -456,6 +463,42 @@ service cloud.firestore {
           );
         allow delete: if false;
       }
+    }
+
+    // Reglas de inventario BARS sincronizado en Firestore
+    match /restaurants/{restaurantId}/inventory_materials/{materialId} {
+      allow read: if isActiveMember(restaurantId);
+      allow create, update: if hasRole(restaurantId, ['admin', 'operador', 'caja']);
+      allow delete: if hasRole(restaurantId, ['admin', 'operador']);
+    }
+
+    match /restaurants/{restaurantId}/inventory_movements/{movementId} {
+      allow read: if isActiveMember(restaurantId);
+      allow create: if hasRole(restaurantId, ['admin', 'operador', 'caja']);
+      allow update, delete: if hasRole(restaurantId, ['admin', 'operador']);
+    }
+
+    match /restaurants/{restaurantId}/inventory_recipes/{recipeId} {
+      allow read: if isActiveMember(restaurantId);
+      allow create, update, delete: if hasRole(restaurantId, ['admin', 'operador']);
+    }
+
+    match /restaurants/{restaurantId}/inventory_deductions/{orderId} {
+      allow read: if isActiveMember(restaurantId);
+      allow create, update, delete: if hasRole(restaurantId, ['admin', 'operador', 'caja']);
+    }
+
+    // Reglas de turnos de caja y gastos BARS en Firestore
+    match /restaurants/{restaurantId}/cash_shifts/{shiftId} {
+      allow read: if isActiveMember(restaurantId);
+      allow create, update: if hasRole(restaurantId, ['admin', 'operador', 'caja']);
+      allow delete: if hasRole(restaurantId, ['admin', 'operador']);
+    }
+
+    match /restaurants/{restaurantId}/cash_expenses/{expenseId} {
+      allow read: if isActiveMember(restaurantId);
+      allow create, update: if hasRole(restaurantId, ['admin', 'operador', 'caja']);
+      allow delete: if hasRole(restaurantId, ['admin', 'operador']);
     }
   }
 }

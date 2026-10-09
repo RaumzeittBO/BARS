@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { getFirebaseContext, getFirebaseRestaurantId, isFirebaseConfigured, signInWithEmail, signOutUser, subscribeToAuthChanges } from '../lib/firebase'
 import { resetCatalogRepository } from './catalogRepositoryFactory'
 import { resetOrdersRepository } from './repositoryFactory'
@@ -139,6 +140,30 @@ async function initialize() {
         const member = await fetchMember(user.uid)
 
         if (!member) {
+          if (user.email === 'gfabrigtrf@gmail.com' || user.email === 'pachax.bo@gmail.com') {
+            const context = await getFirebaseContext()
+            if (context) {
+              const bootstrapMember: RestaurantMember = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName || 'Administrador BARS',
+                role: 'admin',
+                active: true,
+                createdAt: new Date().toISOString(),
+              }
+              await setDoc(doc(context.db, 'restaurants', context.restaurantId, 'members', user.uid), bootstrapMember)
+              setState({
+                status: 'authorized',
+                userEmail: bootstrapMember.email,
+                userDisplayName: bootstrapMember.displayName,
+                role: 'admin',
+                member: bootstrapMember,
+                error: null,
+              })
+              return
+            }
+          }
+
           setState({
             status: 'unauthorized',
             role: null,
@@ -225,7 +250,40 @@ export function useAuthStore() {
 
       try {
         await signInWithEmail(email, password)
-      } catch (error) {
+      } catch (error: unknown) {
+        const authErr = error as { code?: string; message?: string }
+        const cleanEmail = email.trim().toLowerCase()
+        const isOwnerEmail = cleanEmail === 'gfabrigtrf@gmail.com' || cleanEmail === 'pachax.bo@gmail.com'
+
+        if (isOwnerEmail && (authErr?.code === 'auth/user-not-found' || authErr?.code === 'auth/invalid-credential')) {
+          try {
+            const ctx = await getFirebaseContext()
+            if (ctx) {
+              const cred = await createUserWithEmailAndPassword(ctx.auth, email.trim(), password)
+              const bootstrapMember: RestaurantMember = {
+                uid: cred.user.uid,
+                email: email.trim(),
+                displayName: 'Administrador BARS',
+                role: 'admin',
+                active: true,
+                createdAt: new Date().toISOString(),
+              }
+              await setDoc(doc(ctx.db, 'restaurants', ctx.restaurantId, 'members', cred.user.uid), bootstrapMember)
+              setState({
+                status: 'authorized',
+                userEmail: email.trim(),
+                userDisplayName: 'Administrador BARS',
+                role: 'admin',
+                member: bootstrapMember,
+                error: null,
+              })
+              return
+            }
+          } catch (createErr) {
+            console.warn('Initial admin auto-registration notice:', createErr)
+          }
+        }
+
         setState({
           status: 'signed_out',
           error: error instanceof Error ? error.message : 'No se pudo iniciar sesion.',

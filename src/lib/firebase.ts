@@ -48,15 +48,30 @@ export interface FirebaseContext {
   restaurantId: string
 }
 
+function getEnv(key: string): string | undefined {
+  try {
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
+      return import.meta.env[key]
+    }
+  } catch {}
+  try {
+    const proc = (globalThis as Record<string, unknown>).process as { env?: Record<string, string> } | undefined
+    if (proc?.env?.[key]) {
+      return proc.env[key]
+    }
+  } catch {}
+  return undefined
+}
+
 function readFirebaseConfig(): FirebaseWebConfig | null {
   const config = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+    apiKey: getEnv('VITE_FIREBASE_API_KEY') || 'AIzaSyAhFbnmoHw413ZM6Ddc7nZKvutswQ9h03o',
+    authDomain: getEnv('VITE_FIREBASE_AUTH_DOMAIN') || 'bars-f911d.firebaseapp.com',
+    projectId: getEnv('VITE_FIREBASE_PROJECT_ID') || 'bars-f911d',
+    storageBucket: getEnv('VITE_FIREBASE_STORAGE_BUCKET') || 'bars-f911d.firebasestorage.app',
+    messagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID') || '417898442938',
+    appId: getEnv('VITE_FIREBASE_APP_ID') || '1:417898442938:web:ca93dcc98d36de6259d283',
+    measurementId: getEnv('VITE_FIREBASE_MEASUREMENT_ID'),
   }
 
   const requiredValues = [
@@ -72,8 +87,8 @@ function readFirebaseConfig(): FirebaseWebConfig | null {
 }
 
 export function getFirebaseRestaurantId() {
-  const restaurantId = import.meta.env.VITE_FIREBASE_RESTAURANT_ID
-  return typeof restaurantId === 'string' && restaurantId.trim().length > 0 ? restaurantId.trim() : null
+  const restaurantId = getEnv('VITE_FIREBASE_RESTAURANT_ID') || 'bars'
+  return typeof restaurantId === 'string' && restaurantId.trim().length > 0 ? restaurantId.trim() : 'bars'
 }
 
 export function isFirebaseConfigured() {
@@ -99,7 +114,7 @@ export async function getFirebaseContext(): Promise<FirebaseContext | null> {
       const app = initializeApp(firebaseConfig)
       let db: Firestore
 
-      const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true'
+      const useEmulator = getEnv('VITE_USE_FIREBASE_EMULATOR') === 'true'
 
       try {
         db = initializeFirestore(app, {
@@ -118,13 +133,17 @@ export async function getFirebaseContext(): Promise<FirebaseContext | null> {
       const auth = getAuth(app)
 
       if (useEmulator) {
-        const host = window.location.hostname || 'localhost'
+        const host = (typeof window !== 'undefined' ? window.location?.hostname : 'localhost') || 'localhost'
         connectFirestoreEmulator(db, host, 8080)
         connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true })
       }
 
       try {
-        await setPersistence(auth, browserLocalPersistence)
+        if (typeof window !== 'undefined') {
+          await setPersistence(auth, browserLocalPersistence)
+        } else {
+          await setPersistence(auth, inMemoryPersistence)
+        }
       } catch {
         await setPersistence(auth, inMemoryPersistence)
       }
