@@ -4,9 +4,9 @@
   "versionCode": 2,
   "minSupportedVersionCode": 1,
   "isMandatory": false,
-  "releaseDate": "2026-10-10T01:38:59Z",
+  "releaseDate": "2026-10-10T01:45:20Z",
   "apkUrl": "https://bars-f911d.web.app/updates/bars/apk/bars-1.0.1.apk",
-  "apkSizeBytes": 3885377,
-  "apkSha256": "169baedf2803b4a94b92eae5bd281d11e270c4e1863d5861573554930f7ca7e5",
+  "apkSizeBytes": 3885369,
+  "apkSha256": "6d02b7a9053473867432397fdf7dfa49cbb872e0de62265aa52079d7d6e90e30",
   "releaseNotes": "Carta oficial BARS, controles legibles, navegación móvil corregida y sincronización de inventario tras iniciar sesión."
 }

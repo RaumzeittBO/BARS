@@ -9,6 +9,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { getFirebaseContext } from '../../lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 import type { CashExpense, CashShift, Order } from '../../types'
 
 const SHIFTS_KEY = 'bars:cash_shifts'
@@ -22,10 +23,19 @@ class BarsCashService {
   private listeners: Array<() => void> = []
   private unsubscribers: Unsubscribe[] = []
   private syncInitialized = false
+  private authUnsubscribe: Unsubscribe | null = null
 
   constructor() {
     this.loadLocalData()
-    void this.initFirestoreSync()
+    if (typeof window !== 'undefined') {
+      void getFirebaseContext().then((context) => {
+        if (!context) return
+        this.authUnsubscribe = onAuthStateChanged(context.auth, (user) => {
+          this.stopFirestoreSync()
+          if (user) void this.initFirestoreSync()
+        })
+      })
+    }
   }
 
   private loadLocalData() {
@@ -63,20 +73,13 @@ class BarsCashService {
       const shiftsRef = collection(context.db, 'restaurants', context.restaurantId, 'cash_shifts')
       const shiftsQuery = query(shiftsRef, orderBy('openedAt', 'desc'), limit(100))
       const unsubShifts = onSnapshot(shiftsQuery, (snapshot) => {
-        if (!snapshot.empty) {
-          const list: CashShift[] = []
-          snapshot.forEach((docSnap) => {
-            list.push(docSnap.data() as CashShift)
-          })
-          this.shifts = list
+        const list = snapshot.docs.map((docSnap) => docSnap.data() as CashShift)
+        this.shifts = list
 
-          // Detectar turno abierto activo
-          const openShift = list.find((s) => s.status === 'open')
-          this.activeShiftId = openShift ? openShift.id : null
-
-          this.saveLocalData()
-          this.notify()
-        }
+        const openShift = list.find((shift) => shift.status === 'open')
+        this.activeShiftId = openShift ? openShift.id : null
+        this.saveLocalData()
+        this.notify()
       }, (err) => {
         console.warn('Cash shifts firestore sync notice:', err.message)
       })
@@ -86,15 +89,9 @@ class BarsCashService {
       const expensesRef = collection(context.db, 'restaurants', context.restaurantId, 'cash_expenses')
       const expensesQuery = query(expensesRef, orderBy('timestamp', 'desc'), limit(200))
       const unsubExpenses = onSnapshot(expensesQuery, (snapshot) => {
-        if (!snapshot.empty) {
-          const list: CashExpense[] = []
-          snapshot.forEach((docSnap) => {
-            list.push(docSnap.data() as CashExpense)
-          })
-          this.expenses = list
-          this.saveLocalData()
-          this.notify()
-        }
+        this.expenses = snapshot.docs.map((docSnap) => docSnap.data() as CashExpense)
+        this.saveLocalData()
+        this.notify()
       }, (err) => {
         console.warn('Cash expenses firestore sync notice:', err.message)
       })
@@ -102,6 +99,12 @@ class BarsCashService {
     } catch (e) {
       console.warn('Failed to initialize Firestore cash sync:', e)
     }
+  }
+
+  private stopFirestoreSync() {
+    this.unsubscribers.forEach((unsub) => unsub())
+    this.unsubscribers = []
+    this.syncInitialized = false
   }
 
   private notify() {
@@ -339,9 +342,9 @@ class BarsCashService {
   }
 
   destroy() {
-    this.unsubscribers.forEach((unsub) => unsub())
-    this.unsubscribers = []
-    this.syncInitialized = false
+    this.authUnsubscribe?.()
+    this.authUnsubscribe = null
+    this.stopFirestoreSync()
   }
 }
 
