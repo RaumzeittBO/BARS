@@ -205,7 +205,8 @@ public class BarsUpdaterPlugin extends Plugin {
             String expectedHash = call.getString("expectedSha256", "");
             Double expectedVersion = call.getDouble("expectedVersionCode");
             PackageInfo archiveInfo = getArchivePackageInfo(apk);
-            if (expectedVersion == null || archiveInfo == null
+            if (expectedVersion == null || !Double.isFinite(expectedVersion)
+                || expectedVersion != Math.rint(expectedVersion) || archiveInfo == null
                 || !EXPECTED_PACKAGE.equals(archiveInfo.packageName)
                 || !sha256(apk).equalsIgnoreCase(expectedHash)
                 || versionCode(archiveInfo) != expectedVersion.longValue()
@@ -287,7 +288,8 @@ public class BarsUpdaterPlugin extends Plugin {
         if (!"https".equalsIgnoreCase(url.getProtocol())) {
             throw new SecurityException("Se requiere HTTPS para la descarga de actualizaciones.");
         }
-        if (!isTrusted) {
+        if (!isTrusted || !url.getPath().startsWith(APK_PATH_PREFIX)
+            || url.getUserInfo() != null || url.getQuery() != null || url.getRef() != null) {
             throw new SecurityException("Servidor de actualización no autorizado para BARS: " + host);
         }
         return url;
