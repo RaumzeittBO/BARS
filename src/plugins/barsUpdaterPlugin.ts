@@ -10,10 +10,10 @@ export interface BarsUpdaterPluginInterface {
   getInstalledVersion(): Promise<InstalledAppVersion>
   checkInstallPermission(): Promise<{ granted: boolean }>
   requestInstallPermission(): Promise<{ opened: boolean }>
-  downloadUpdate(options: { url: string; expectedSizeBytes: number }): Promise<{ filePath: string; sizeBytes: number }>
+  downloadUpdate(options: { url: string; expectedSizeBytes: number; expectedSha256: string }): Promise<{ filePath: string; verified: boolean }>
   cancelDownload(): Promise<{ cancelled: boolean }>
   verifyApk(options: { filePath: string; expectedSha256: string; expectedVersionCode: number }): Promise<{ verified: boolean }>
-  installApk(options: { filePath: string }): Promise<{ launched: boolean }>
+  installApk(options: { filePath: string }): Promise<{ opened: boolean }>
 }
 
 const BarsUpdater = registerPlugin<BarsUpdaterPluginInterface>('BarsUpdater', {
@@ -37,7 +37,7 @@ const BarsUpdater = registerPlugin<BarsUpdaterPluginInterface>('BarsUpdater', {
       return { verified: false }
     },
     async installApk() {
-      return { launched: false }
+      return { opened: false }
     },
   },
 })

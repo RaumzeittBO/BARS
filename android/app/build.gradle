@@ -1,5 +1,15 @@
 apply plugin: 'com.android.application'
 
+def barsSigningProperties = new Properties()
+def barsSigningPropertiesPath = System.getenv('BARS_SIGNING_PROPERTIES')
+if (barsSigningPropertiesPath) {
+    def barsSigningFile = file(barsSigningPropertiesPath)
+    if (!barsSigningFile.isFile()) {
+        throw new GradleException('No se encontró BARS_SIGNING_PROPERTIES.')
+    }
+    barsSigningFile.withInputStream { barsSigningProperties.load(it) }
+}
+
 android {
     namespace = "net.pachax.bars"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +26,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (barsSigningPropertiesPath) {
+            barsRelease {
+                storeFile file(barsSigningProperties.getProperty('storeFile'))
+                storePassword barsSigningProperties.getProperty('storePassword')
+                keyAlias barsSigningProperties.getProperty('keyAlias')
+                keyPassword barsSigningProperties.getProperty('keyPassword')
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (barsSigningPropertiesPath) {
+                signingConfig signingConfigs.barsRelease
+            }
         }
     }
 }

@@ -35,14 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class BarsUpdaterPlugin extends Plugin {
     private static final String EXPECTED_PACKAGE = "net.pachax.bars";
     private static final String APK_PATH_PREFIX = "/updates/bars/apk/";
-    private static final Set<String> TRUSTED_HOSTS = Set.of(
-        "bars-pachax.web.app",
-        "bars-pachax.firebaseapp.com",
-        "bars-pachax.vercel.app",
-        "pachax-bars.web.app",
-        "pachax-bars.firebaseapp.com",
-        "localhost"
-    );
+    private static final Set<String> TRUSTED_HOSTS = Set.of("bars-f911d.web.app", "bars-f911d.firebaseapp.com");
     private static final long MAX_APK_BYTES = 500L * 1024L * 1024L;
     private static final int BUFFER_SIZE = 64 * 1024;
 
@@ -170,6 +163,10 @@ public class BarsUpdaterPlugin extends Plugin {
                     out.flush();
                 }
 
+                if (destination.length() != expectedSize) {
+                    throw new SecurityException("El tamaño descargado no coincide con el manifiesto.");
+                }
+
                 // Verificar hash SHA-256
                 String actualSha256 = sha256(destination);
                 if (!actualSha256.equalsIgnoreCase(expectedSha256)) {
@@ -179,7 +176,8 @@ public class BarsUpdaterPlugin extends Plugin {
 
                 // Verificar paquete del APK
                 PackageInfo archiveInfo = getArchivePackageInfo(destination);
-                if (archiveInfo == null || !EXPECTED_PACKAGE.equals(archiveInfo.packageName)) {
+                if (archiveInfo == null || !EXPECTED_PACKAGE.equals(archiveInfo.packageName)
+                    || !certificateSha256(archiveInfo).equals(certificateSha256(getInstalledPackageInfo()))) {
                     deleteQuietly(destination);
                     throw new SecurityException("El APK no corresponde al paquete oficial BARS.");
                 }
@@ -198,6 +196,31 @@ public class BarsUpdaterPlugin extends Plugin {
                 if (connection != null) connection.disconnect();
             }
         });
+    }
+
+    @PluginMethod
+    public void verifyApk(PluginCall call) {
+        try {
+            File apk = validatedUpdateFile(call.getString("filePath", ""));
+            String expectedHash = call.getString("expectedSha256", "");
+            Double expectedVersion = call.getDouble("expectedVersionCode");
+            PackageInfo archiveInfo = getArchivePackageInfo(apk);
+            if (expectedVersion == null || archiveInfo == null
+                || !EXPECTED_PACKAGE.equals(archiveInfo.packageName)
+                || !sha256(apk).equalsIgnoreCase(expectedHash)
+                || versionCode(archiveInfo) != expectedVersion.longValue()
+                || versionCode(archiveInfo) <= versionCode(getInstalledPackageInfo())
+                || !certificateSha256(archiveInfo).equals(certificateSha256(getInstalledPackageInfo()))) {
+                call.reject("La versión, integridad o firma del APK no coincide.");
+                return;
+            }
+            verifiedApk = apk;
+            JSObject result = new JSObject();
+            result.put("verified", true);
+            call.resolve(result);
+        } catch (Exception error) {
+            call.reject("No se pudo verificar el APK.", error);
+        }
     }
 
     @PluginMethod
@@ -260,8 +283,8 @@ public class BarsUpdaterPlugin extends Plugin {
     private URL validateTrustedUrl(String rawUrl) throws Exception {
         URL url = new URL(rawUrl);
         String host = url.getHost().toLowerCase(Locale.ROOT);
-        boolean isTrusted = TRUSTED_HOSTS.contains(host) || host.endsWith(".firebaseapp.com") || host.endsWith(".web.app") || host.endsWith(".vercel.app");
-        if (!"https".equalsIgnoreCase(url.getProtocol()) && !host.equals("localhost")) {
+        boolean isTrusted = TRUSTED_HOSTS.contains(host);
+        if (!"https".equalsIgnoreCase(url.getProtocol())) {
             throw new SecurityException("Se requiere HTTPS para la descarga de actualizaciones.");
         }
         if (!isTrusted) {

@@ -4,9 +4,9 @@
   "versionCode": 1,
   "minSupportedVersionCode": 1,
   "isMandatory": false,
-  "releaseDate": "2026-10-09T00:00:00Z",
-  "apkUrl": "https://pachax-bars.web.app/updates/bars/apk/bars-1.0.0.apk",
-  "apkSizeBytes": 6500000,
-  "apkSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "releaseDate": "2026-10-10T00:15:28Z",
+  "apkUrl": "https://bars-f911d.web.app/updates/bars/apk/bars-1.0.0.apk",
+  "apkSizeBytes": 3885533,
+  "apkSha256": "6c9a8e76c2d1f566897cffd99c53c138fdd405c7f501e9072a69333ad2fdd1dc",
   "releaseNotes": "Versión inicial oficial de BARS por PACHAX con Punto de Venta, Inventario con recetas, Arqueo de turno e Impresión Bluetooth automática."
 }

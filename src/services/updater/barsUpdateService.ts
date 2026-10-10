@@ -24,7 +24,7 @@ export interface UpdateCheckResult {
 
 const DEFAULT_MANIFEST_URL =
   import.meta.env.VITE_UPDATER_MANIFEST_URL ||
-  'https://bars-beta.vercel.app/updates/bars/update.json'
+  'https://bars-f911d.web.app/updates/bars/update.json'
 
 class BarsUpdateService {
   private isChecking = false
@@ -120,6 +120,7 @@ class BarsUpdateService {
       const downloadRes = await BarsUpdater.downloadUpdate({
         url: manifest.apkUrl,
         expectedSizeBytes: manifest.apkSizeBytes,
+        expectedSha256: manifest.apkSha256,
       })
       onProgress?.(70)
 
@@ -140,7 +141,7 @@ class BarsUpdateService {
       const installRes = await BarsUpdater.installApk({ filePath: downloadRes.filePath })
       onProgress?.(100)
 
-      return { success: installRes.launched }
+      return { success: installRes.opened }
     } catch (err: any) {
       return { success: false, error: err?.message || 'Error al descargar o instalar la actualización.' }
     }
