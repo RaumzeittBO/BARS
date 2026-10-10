@@ -5,6 +5,7 @@ import { CajaView } from './components/CajaView'
 import { CocinaView } from './components/CocinaView'
 import { HistorialView } from './components/HistorialView'
 import { InventarioView } from './components/InventarioView'
+import { ClientesView } from './components/ClientesView'
 import { ArqueoView } from './components/ArqueoView'
 import { LoginView } from './components/LoginView'
 import { TopBar } from './components/TopBar'
@@ -32,11 +33,11 @@ function getDayKey(value: string | Date = new Date()) {
 
 function getAllowedViews(role: UserRole | 'demo'): View[] {
   if (role === 'admin' || role === 'demo') {
-    return ['caja', 'cocina', 'historial', 'inventario', 'arqueo', 'admin']
+    return ['caja', 'cocina', 'historial', 'inventario', 'clientes', 'arqueo', 'admin']
   }
 
   if (role === 'operador') {
-    return ['caja', 'cocina', 'inventario', 'arqueo', 'admin']
+    return ['caja', 'cocina', 'inventario', 'clientes', 'arqueo', 'admin']
   }
 
   if (role === 'caja') {
@@ -143,6 +144,7 @@ function MainShell({
     tableInfo?: string
     customerName?: string
     customerPhone?: string
+    customerId?: string
     deliveryAddress?: string
     createdBy?: string
     estimatedDelay?: number
@@ -164,6 +166,7 @@ function MainShell({
           const extrasTotal = item.modifiers.extras.reduce((sum, extra) => sum + extra.price, 0)
           return {
             id: item.lineId,
+            productId: item.productId,
             name: product?.name || 'Producto',
             basePrice: product?.price || 0,
             quantity: item.quantity,
@@ -185,6 +188,7 @@ function MainShell({
         tableInfo: input.tableInfo,
         customerName: input.customerName,
         customerPhone: input.customerPhone,
+        customerId: input.customerId,
         deliveryAddress: input.deliveryAddress,
         createdBy: input.createdBy || userId,
       }
@@ -395,6 +399,8 @@ function MainShell({
           {view === 'inventario' ? (
             <InventarioView products={products} userName={userName} userRole={role} />
           ) : null}
+
+          {view === 'clientes' ? <ClientesView orders={orders} userRole={role} /> : null}
 
           {view === 'arqueo' ? (
             <ArqueoView orders={orders} userName={userName} userRole={role} />

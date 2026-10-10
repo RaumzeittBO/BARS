@@ -103,6 +103,7 @@ export function normalizeOrder(raw: Record<string, unknown>): Partial<Order> {
     tableInfo: (raw.tableInfo as string) ?? '',
     customerName: (raw.customerName as string) ?? undefined,
     customerPhone: (raw.customerPhone as string) ?? undefined,
+    customerId: typeof raw.customerId === 'string' ? raw.customerId : undefined,
     deliveryAddress: (raw.deliveryAddress as string) ?? undefined,
     createdBy: (raw.createdBy as string) ?? undefined,
     items: Array.isArray(raw.items)

@@ -41,6 +41,7 @@ export function useOrdersStore() {
 
         return {
           id: item.lineId,
+          productId: item.productId,
           name: product.name,
           basePrice: product.price,
           quantity: item.quantity,
@@ -62,6 +63,7 @@ export function useOrdersStore() {
         tableInfo: input.tableInfo,
         customerName: input.customerName,
         customerPhone: input.customerPhone,
+        customerId: input.customerId,
         whatsappChatId: input.whatsappChatId,
         deliveryAddress: input.deliveryAddress,
         createdBy: input.createdBy,
@@ -89,6 +91,7 @@ export function useOrdersStore() {
 
         return {
           id: item.lineId,
+          productId: item.productId,
           name: product.name,
           basePrice: product.price,
           quantity: item.quantity,
@@ -137,6 +140,7 @@ export function useOrdersStore() {
 
           return {
             id: item.lineId,
+            productId: item.productId,
             name,
             basePrice,
             quantity: item.quantity,

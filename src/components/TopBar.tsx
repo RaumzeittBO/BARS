@@ -1,4 +1,4 @@
-import { Archive, ChefHat, CreditCard, Menu, Package, Settings2, WalletCards, X, LogOut, User } from 'lucide-react'
+import { Archive, ChefHat, CreditCard, Menu, Package, Settings2, WalletCards, X, LogOut, User, Users } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import type { UserRole, View } from '../types'
 import { BarsLogo } from './BarsLogo'
@@ -8,6 +8,7 @@ const items: Array<{ id: View; label: string; subtitle: string; icon: typeof Cre
   { id: 'cocina', label: 'Cocina & Pedidos', subtitle: 'Despacho en vivo', icon: ChefHat },
   { id: 'historial', label: 'Ventas & Reportes', subtitle: 'Historial detallado', icon: Archive },
   { id: 'inventario', label: 'Inventario & Recetas', subtitle: 'Control de insumos', icon: Package },
+  { id: 'clientes', label: 'Clientes', subtitle: 'Historial y ranking', icon: Users },
   { id: 'arqueo', label: 'Caja & Arqueo', subtitle: 'Turnos y efectivo', icon: WalletCards },
   { id: 'admin', label: 'Configuración', subtitle: 'Catálogo y sistema', icon: Settings2 },
 ]

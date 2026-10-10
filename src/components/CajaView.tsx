@@ -32,6 +32,7 @@ import { PrintableTicket } from './OrderTicket'
 import { PrintModeToggle } from './PrintModeToggle'
 import { desgloseParaGuardar, montosDesdeTextos, repartoCuadra } from '../lib/qrSplit'
 import { RepartoQr, type ModoQr } from './RepartoQr'
+import { barsCustomerService } from '../services/customers/barsCustomerService'
 
 const DEFAULT_PREP_DELAY = 10
 const DEMAND_STORAGE_KEY = 'bars:demand-delay'
@@ -176,6 +177,8 @@ export function CajaView({
   const [fulfillmentType, setFulfillmentType] = useState<'table' | 'pickup' | 'delivery'>('table')
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
+  const [customerId, setCustomerId] = useState('')
+  const [registeredCustomers, setRegisteredCustomers] = useState(barsCustomerService.getAll())
   const [whatsappChatId, setWhatsappChatId] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [orderDelay, setOrderDelay] = useState(DEFAULT_PREP_DELAY)
@@ -184,6 +187,8 @@ export function CajaView({
   const [qrMontos, setQrMontos] = useState<string[]>(['', ''])
   const [fastQrModo, setFastQrModo] = useState<ModoQr>('unico')
   const [fastQrMontos, setFastQrMontos] = useState<string[]>(['', ''])
+
+  useEffect(() => { const unsubscribe = barsCustomerService.subscribe(() => setRegisteredCustomers(barsCustomerService.getAll())); return () => { unsubscribe() } }, [])
 
   async function handleSetOrderStatus(order: Order, status: OrderStatus, estimatedDelay?: number) {
     await onSetOrderStatus(order.id, status, estimatedDelay)
@@ -573,6 +578,7 @@ export function CajaView({
     setFulfillmentType(source === 'local' && savedFulfillment === 'delivery' ? 'pickup' : savedFulfillment)
     setCustomerName(order.customerName || '')
     setCustomerPhone(order.customerPhone || '')
+    setCustomerId(order.customerId || '')
     setWhatsappChatId(order.whatsappChatId || '')
     setDeliveryAddress(order.deliveryAddress || '')
     setOrderDelay(Number(order.estimatedDelay || globalDelay || DEFAULT_PREP_DELAY))
@@ -599,6 +605,7 @@ export function CajaView({
     setOrderSource(userRole === 'pedidos' ? 'whatsapp' : 'local')
     setCustomerName('')
     setCustomerPhone('')
+    setCustomerId('')
     setWhatsappChatId('')
     setDeliveryAddress('')
     setPaymentStatus(userRole === 'pedidos' ? 'pending' : 'paid')
@@ -1699,6 +1706,10 @@ export function CajaView({
                 {/* Contacto */}
                 <div className="rounded-[0.9rem] border border-line bg-white p-2 shadow-sm space-y-1.5">
                   <div className="text-[9px] font-black uppercase tracking-wider text-muted">Datos de Contacto</div>
+                  <select value={customerId} onChange={(e) => { const selected = registeredCustomers.find((customer) => customer.id === e.target.value); setCustomerId(e.target.value); if (selected) { setCustomerName(`${selected.firstName} ${selected.lastName || ''}`.trim()); setCustomerPhone(selected.phone) } }} className="w-full rounded-[0.7rem] border border-line bg-canvas/30 px-3 py-1.5 text-xs text-ink outline-none">
+                    <option value="">Cliente general / sin registrar</option>
+                    {registeredCustomers.filter((customer) => customer.active).map((customer) => <option key={customer.id} value={customer.id}>{customer.firstName} {customer.lastName || ''} · {customer.phone || 'sin teléfono'}</option>)}
+                  </select>
                   <input
                     className="w-full rounded-[0.7rem] border border-line bg-canvas/30 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
                     placeholder="Nombre del Cliente (opcional)"
@@ -1947,6 +1958,7 @@ export function CajaView({
                       tableInfo: '',
                       customerName: nombreFinal,
                       customerPhone: telefonoFinal,
+                      customerId: customerId || undefined,
                       whatsappChatId: orderSource === 'whatsapp' ? whatsappChatId : '',
                       deliveryAddress: direccionFinal,
                       createdBy: userId,
@@ -1987,6 +1999,7 @@ export function CajaView({
                           tableInfo: '',
                           customerName: nombreFinal,
                           customerPhone: telefonoFinal,
+                          customerId: customerId || undefined,
                           whatsappChatId: orderSource === 'whatsapp' ? whatsappChatId : '',
                           deliveryAddress: direccionFinal,
                         }
@@ -2036,6 +2049,7 @@ export function CajaView({
                           tableInfo: '',
                           customerName: nombreFinal,
                           customerPhone: telefonoFinal,
+                          customerId: customerId || undefined,
                           whatsappChatId: orderSource === 'whatsapp' ? whatsappChatId : undefined,
                           deliveryAddress: direccionFinal,
                           createdBy: userId,

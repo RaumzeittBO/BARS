@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore'
 import { getFirebaseContext } from '../../lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import type { Order, ProductRecipe, RawMaterial, StockMovement } from '../../types'
+import type { Order, ProductRecipe, RawMaterial, StockMovement, UnitOfMeasure } from '../../types'
 
 const RAW_MATERIALS_KEY = 'bars:raw_materials'
 const RECIPES_KEY = 'bars:product_recipes'
@@ -350,6 +350,15 @@ class BarsInventoryService {
     return this.materials.filter((m) => m.currentStock <= m.minStock)
   }
 
+  private convertRecipeQuantity(quantity: number, fromUnit: UnitOfMeasure | undefined, toUnit: UnitOfMeasure): number {
+    if (!fromUnit || fromUnit === toUnit) return quantity
+    if (fromUnit === 'g' && toUnit === 'kg') return quantity / 1000
+    if (fromUnit === 'kg' && toUnit === 'g') return quantity * 1000
+    if (fromUnit === 'ml' && toUnit === 'l') return quantity / 1000
+    if (fromUnit === 'l' && toUnit === 'ml') return quantity * 1000
+    return quantity
+  }
+
   /**
    * Deduce el inventario automáticamente al confirmar una venta.
    * - Operación atómica e idempotente (un solo descuento por pedido).
@@ -377,7 +386,9 @@ class BarsInventoryService {
 
     for (const item of order.items) {
       const itemQty = item.quantity
-      const recipe = this.getRecipe(item.id)
+      // `item.id` identifica la línea del pedido; la receta está indexada por el
+      // producto del catálogo. Mantener el fallback permite leer pedidos antiguos.
+      const recipe = this.getRecipe(item.productId || item.id)
 
       if (recipe && recipe.ingredients.length > 0) {
         for (const ing of recipe.ingredients) {
@@ -387,7 +398,11 @@ class BarsInventoryService {
             )
             if (hasOptionExclusion) continue
           }
-          addDeduction(ing.rawMaterialId, ing.quantity * itemQty)
+          const material = this.getRawMaterial(ing.rawMaterialId)
+          const quantityInStockUnit = material
+            ? this.convertRecipeQuantity(ing.quantity, ing.unit, material.unit)
+            : ing.quantity
+          addDeduction(ing.rawMaterialId, quantityInStockUnit * itemQty)
         }
       }
     }

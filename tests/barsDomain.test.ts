@@ -125,10 +125,10 @@ console.log('   ✓ Fórmulas de caja, arqueo y discriminación de QR validadas 
 // 3. PRUEBA DE INVENTARIO Y DESCUENTO AUTOMÁTICO
 console.log('3. Verificando descuento automático de inventario y recetas...')
 barsInventoryService.saveRawMaterial({ id: 'test-pan', name: 'Pan de prueba', unit: 'u', currentStock: 10, minStock: 0 })
-barsInventoryService.saveRawMaterial({ id: 'test-carne', name: 'Carne de prueba', unit: 'u', currentStock: 20, minStock: 0 })
+barsInventoryService.saveRawMaterial({ id: 'test-carne', name: 'Carne de prueba', unit: 'kg', currentStock: 20, minStock: 0 })
 barsInventoryService.saveRecipe({ productId: 'item-1', ingredients: [
   { rawMaterialId: 'test-pan', quantity: 1 },
-  { rawMaterialId: 'test-carne', quantity: 2 },
+  { rawMaterialId: 'test-carne', quantity: 200, unit: 'g' },
 ] })
 const initialMaterials = barsInventoryService.getRawMaterials()
 const initialPanes = initialMaterials.find((m) => m.name.toLowerCase().includes('pan'))?.currentStock || 0
@@ -143,7 +143,8 @@ const burgerOrder: Order = {
   status: 'preparing',
   items: [
     {
-      id: 'item-1',
+      id: 'line-hamburguesa-1',
+      productId: 'item-1',
       name: 'Hamburguesa Doble BARS',
       basePrice: 35,
       quantity: 2,
@@ -173,7 +174,7 @@ const newCarnes = updatedMaterials.find((m) => m.name.toLowerCase().includes('ca
 
 // 2 hamburguesas = 2 panes descontados
 assert.equal(newPanes, initialPanes - 2, 'Deben descontarse 2 panes')
-assert.equal(newCarnes, initialCarnes - 4, 'Deben descontarse 4 porciones de carne de la receta')
+assert.equal(newCarnes, initialCarnes - 0.4, 'Deben descontarse 400 g = 0.4 kg de carne de la receta')
 
 // Probar idempotencia (un segundo descuento con el mismo pedido no debe volver a descontar)
 const duplicateDeduction = await barsInventoryService.deductStockForOrder(burgerOrder, 'TestUser')

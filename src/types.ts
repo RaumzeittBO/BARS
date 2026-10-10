@@ -119,6 +119,8 @@ export interface PaymentSummary {
 
 export interface OrderItem {
   id: string
+  /** Identificador estable del producto del catálogo, distinto al id de la línea del pedido. */
+  productId?: string
   name: string
   basePrice: number
   quantity: number
@@ -162,6 +164,7 @@ export interface Order {
   tableInfo?: string
   customerName?: string
   customerPhone?: string
+  customerId?: string
   deliveryAddress?: string
   createdBy?: string
   dayKey?: string
@@ -181,6 +184,7 @@ export interface CreateOrderInput {
   tableInfo?: string
   customerName?: string
   customerPhone?: string
+  customerId?: string
   whatsappChatId?: string
   deliveryAddress?: string
   createdBy?: string
@@ -207,7 +211,19 @@ export interface AppState {
   lastUpdatedAt: number
 }
 
-export type View = 'caja' | 'cocina' | 'historial' | 'inventario' | 'arqueo' | 'admin'
+export type View = 'caja' | 'cocina' | 'historial' | 'inventario' | 'clientes' | 'arqueo' | 'admin'
+
+export interface BarsCustomer {
+  id: string
+  firstName: string
+  lastName?: string
+  phone: string
+  normalizedPhone: string
+  address?: string
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
 
 export type UnitOfMeasure = 'u' | 'kg' | 'g' | 'l' | 'ml' | 'porcion'
 
@@ -225,6 +241,8 @@ export interface RawMaterial {
 export interface RecipeIngredient {
   rawMaterialId: string
   quantity: number
+  /** Unidad en la que se expresa la receta; permite, por ejemplo, 180 g de un stock en kg. */
+  unit?: UnitOfMeasure
   isOptional?: boolean
   modifierOption?: string
 }

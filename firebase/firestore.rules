@@ -364,6 +364,22 @@ service cloud.firestore {
       allow delete: if hasRole(restaurantId, ['admin']) && request.auth.uid != uid;
     }
 
+    match /restaurants/{restaurantId}/customers/{customerId} {
+      allow read: if isActiveMember(restaurantId);
+      allow create, update: if hasRole(restaurantId, ['admin', 'operador', 'caja'])
+        && request.resource.data.keys().hasOnly(['id', 'firstName', 'lastName', 'phone', 'normalizedPhone', 'address', 'active', 'createdAt', 'updatedAt'])
+        && request.resource.data.id == customerId
+        && request.resource.data.firstName is string
+        && request.resource.data.lastName is string
+        && request.resource.data.phone is string
+        && request.resource.data.normalizedPhone is string
+        && request.resource.data.address is string
+        && request.resource.data.active is bool
+        && request.resource.data.createdAt is string
+        && request.resource.data.updatedAt is string;
+      allow delete: if hasRole(restaurantId, ['admin', 'operador']);
+    }
+
     match /restaurants/{restaurantId}/catalog/{catalogId}/categories/{categoryId} {
       allow read: if isActiveMember(restaurantId);
       allow create, update: if hasRole(restaurantId, ['admin', 'operador']) && isValidCategoryData();

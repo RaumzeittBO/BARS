@@ -17,7 +17,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { formatCurrency } from '../lib/format'
 import { barsInventoryService } from '../services/inventory/barsInventoryService'
-import type { Product, RawMaterial, StockMovement, UnitOfMeasure, UserRole } from '../types'
+import type { Product, RawMaterial, RecipeIngredient, StockMovement, UnitOfMeasure, UserRole } from '../types'
 import { Button } from './ui/Button'
 import { Panel } from './ui/Panel'
 
@@ -55,6 +55,21 @@ export function InventarioView({
 
   // Recetas
   const [selectedProductId, setSelectedProductId] = useState<string>(products[0]?.id || '')
+  const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([])
+
+  useEffect(() => {
+    setRecipeIngredients(selectedProductId ? barsInventoryService.getRecipe(selectedProductId)?.ingredients || [] : [])
+  }, [selectedProductId, materials])
+
+  const saveSelectedRecipe = () => {
+    if (!selectedProductId) return
+    barsInventoryService.saveRecipe({
+      productId: selectedProductId,
+      ingredients: recipeIngredients.filter((ingredient) => ingredient.rawMaterialId && ingredient.quantity > 0),
+    })
+    setFeedback('Receta guardada. Las próximas ventas descontarán estos insumos.')
+    setTimeout(() => setFeedback(null), 3000)
+  }
 
   useEffect(() => {
     const unsub = barsInventoryService.subscribe(() => {
@@ -386,6 +401,25 @@ export function InventarioView({
                       <p className="text-[11px] text-[#777777] italic">
                         * El sistema detecta automáticamente hamburguesas dobles/triples multiplicando la carne y el queso, y omite insumos cuando el cliente pide "Sin salsa", "Sin cebolla", etc.
                       </p>
+                    </div>
+                    <div className="rounded-2xl bg-[#18181A] p-4 border border-[#2E2E2E] space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">Editar receta conectada</h4>
+                        <button onClick={() => setRecipeIngredients((current) => [...current, { rawMaterialId: materials[0]?.id || '', quantity: 1, unit: materials[0]?.unit }])} disabled={!materials.length} className="rounded-xl bg-[#FF6A00] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-40">+ Insumo</button>
+                      </div>
+                      {recipeIngredients.map((ingredient, index) => (
+                        <div key={`${ingredient.rawMaterialId}-${index}`} className="flex items-center gap-2">
+                          <select value={ingredient.rawMaterialId} onChange={(event) => setRecipeIngredients((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, rawMaterialId: event.target.value } : item))} className="min-w-0 flex-1 rounded-xl border border-[#333] bg-[#101010] p-2 text-xs text-white">
+                            {materials.map((mat) => <option key={mat.id} value={mat.id}>{mat.name} ({mat.unit})</option>)}
+                          </select>
+                          <input type="number" min="0.01" step="0.01" value={ingredient.quantity} onChange={(event) => setRecipeIngredients((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) || 0 } : item))} className="w-20 rounded-xl border border-[#333] bg-[#101010] p-2 text-xs text-white" />
+                          <select value={ingredient.unit || materials.find((mat) => mat.id === ingredient.rawMaterialId)?.unit || 'u'} onChange={(event) => setRecipeIngredients((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, unit: event.target.value as UnitOfMeasure } : item))} className="w-20 rounded-xl border border-[#333] bg-[#101010] p-2 text-xs text-white">
+                            {(['u', 'kg', 'g', 'l', 'ml', 'porcion'] as UnitOfMeasure[]).map((unit) => <option key={unit} value={unit}>{unit}</option>)}
+                          </select>
+                          <button onClick={() => setRecipeIngredients((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="rounded-xl border border-rose-800/50 px-2 py-2 text-xs text-rose-300">Quitar</button>
+                        </div>
+                      ))}
+                      <button onClick={saveSelectedRecipe} className="w-full rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white">Guardar receta</button>
                     </div>
                   </div>
                 )
