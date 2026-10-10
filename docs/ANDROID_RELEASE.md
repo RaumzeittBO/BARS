@@ -16,6 +16,6 @@ El actualizador descarga exclusivamente de `bars-f911d.web.app` o `bars-f911d.fi
 
 Para cada versión nueva, copiar el APK firmado a `public/updates/bars/apk/bars-VERSION.apk` y actualizar `public/updates/bars/update.json` con su URL, tamaño, SHA-256 y códigos de versión. Construir la web con `npm run build` y publicar con `firebase deploy --only hosting --project bars-f911d`.
 
-**Requisito pendiente:** Firebase Hosting bloquea archivos `.apk` en el plan Spark. El propietario debe autorizar la activación del plan Blaze para `bars-f911d` antes de publicar el APK en Hosting. La versión 1.0.0 firmada se guarda en `releases/android/bars-1.0.0.apk` y en el escritorio; el APK no está todavía disponible en la URL indicada por el manifiesto. La app 1.0.0 no ofrece una actualización de sí misma porque el código de versión del manifiesto es el mismo.
+El proyecto `bars-f911d` utiliza el plan Blaze. La versión 1.0.1 está publicada en Firebase Hosting y su manifiesto ofrece una actualización a quienes tengan instalada la versión oficial 1.0.0. Android pedirá autorizar la instalación desde BARS la primera vez. Cada publicación posterior debe incrementar `versionCode`, usar la misma firma y actualizar el manifiesto después de generar el APK.
 
 Una compilación de depuración anterior tiene otro certificado y debe desinstalarse antes de instalar la primera versión oficial. El cambio de firma no se puede aplicar como actualización de Android.

@@ -358,7 +358,7 @@ function MainShell({
           userRole={role}
         />
 
-        <main className="min-w-0">
+        <main className="min-w-0 rounded-[1.75rem] border border-[#E6DCD2] bg-[#FFF9F4] p-3 text-[#201C19] shadow-card [color-scheme:light] md:p-5">
           {view === 'caja' ? (
             <CajaView
               categories={categories}

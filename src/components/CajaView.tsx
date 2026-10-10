@@ -650,13 +650,13 @@ export function CajaView({
       {portalElement ? createPortal(controlsContent, portalElement) : null}
       {/* Top View Mode Switcher */}
       <div className="flex flex-wrap justify-between items-center gap-4 border-b border-line pb-4">
-        <div className="flex gap-2 bg-white/60 p-1.5 rounded-2xl border border-white/80 shadow-insetSoft">
+        <div className="flex gap-2 bg-[#221C18] p-1.5 rounded-2xl border border-[#3C3028] shadow-card">
           <button
             type="button"
             className={`px-5 py-2.5 rounded-xl text-xs font-black tracking-wider transition ${
               viewMode === 'new_order'
-                ? 'bg-ink text-white shadow-card'
-                : 'text-muted hover:text-ink'
+                ? 'bg-accent text-white shadow-card'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
             }`}
             onClick={() => setViewMode('new_order')}
           >
@@ -666,8 +666,8 @@ export function CajaView({
             type="button"
             className={`relative px-5 py-2.5 rounded-xl text-xs font-black tracking-wider transition ${
               viewMode === 'orders_list'
-                ? 'bg-ink text-white shadow-card'
-                : 'text-muted hover:text-ink'
+                ? 'bg-accent text-white shadow-card'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
             }`}
             onClick={() => setViewMode('orders_list')}
           >
@@ -699,12 +699,12 @@ export function CajaView({
       </div>
 
       {/* Responsive layout selector for mobile */}
-      <div className="flex gap-2 rounded-2xl bg-white/70 p-1.5 shadow-insetSoft border border-white/80 lg:hidden">
+      <div className="flex gap-2 rounded-2xl border border-[#3C3028] bg-[#221C18] p-1.5 shadow-card lg:hidden">
         <button
           className={`flex-1 rounded-[1.15rem] py-3 text-center text-sm font-bold transition ${
             activeTab === 'catalog'
-              ? 'bg-ink text-white shadow-card'
-              : 'text-muted hover:text-ink'
+              ? 'bg-accent text-white shadow-card'
+              : 'text-white/80 hover:bg-white/10 hover:text-white'
           }`}
           onClick={() => setActiveTab('catalog')}
         >
@@ -713,8 +713,8 @@ export function CajaView({
         <button
           className={`flex-1 rounded-[1.15rem] py-3 text-center text-sm font-bold transition flex items-center justify-center gap-2 ${
             activeTab === 'cart'
-              ? 'bg-ink text-white shadow-card'
-              : 'text-muted hover:text-ink'
+              ? 'bg-accent text-white shadow-card'
+              : 'text-white/80 hover:bg-white/10 hover:text-white'
           }`}
           onClick={() => setActiveTab('cart')}
         >
@@ -743,8 +743,8 @@ export function CajaView({
                       key={category.id}
                       className={`px-4 py-2 rounded-full text-xs font-black tracking-wider transition shrink-0 shadow-sm ${
                         isActive
-                          ? 'bg-ink text-white'
-                          : 'bg-white border border-line text-ink hover:bg-panel'
+                          ? 'bg-accent text-white'
+                          : 'bg-white border border-line text-ink hover:bg-accentWash'
                       }`}
                       onClick={() => setSelectedCategoryId(category.id)}
                     >
@@ -765,7 +765,7 @@ export function CajaView({
 
                     <div className="p-2.5 flex-1 flex flex-col justify-between gap-2">
                       <div>
-                        <h3 className="text-xs sm:text-sm font-bold text-white tracking-wide truncate" title={product.name}>
+                        <h3 className="min-h-10 text-xs sm:text-sm font-bold text-white tracking-wide line-clamp-2" title={product.name}>
                           {product.name}
                         </h3>
                       </div>
@@ -793,7 +793,7 @@ export function CajaView({
                 ))}
 
                 {visibleProducts.length === 0 ? (
-                  <Panel className="col-span-full border-dashed border-lineStrong bg-white/55 p-8 text-center text-sm text-muted">
+                  <Panel className="col-span-full border-dashed border-lineStrong bg-white/50 p-8 text-center text-sm text-muted">
                     No hay productos disponibles en esta categoria.
                   </Panel>
                 ) : null}
@@ -1647,7 +1647,7 @@ export function CajaView({
                               Observacion para cocina
                             </label>
                             <textarea
-                              className="min-h-10 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none transition placeholder:text-muted focus:border-accent"
+                              className="min-h-10 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none transition placeholder:text-muted focus:border-accent"
                               placeholder="Ej. salsa aparte, sin cebolla..."
                               value={item.modifiers.note}
                               onChange={(e) => updateItem(item.lineId, (cur) => ({ ...cur, modifiers: { ...cur.modifiers, note: e.target.value } }))}
@@ -1700,20 +1700,20 @@ export function CajaView({
                 <div className="rounded-[0.9rem] border border-line bg-white p-2 shadow-sm space-y-1.5">
                   <div className="text-[9px] font-black uppercase tracking-wider text-muted">Datos de Contacto</div>
                   <input
-                    className="w-full rounded-[0.7rem] border border-line bg-canvas/35 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
+                    className="w-full rounded-[0.7rem] border border-line bg-canvas/30 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
                     placeholder="Nombre del Cliente (opcional)"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                   />
                   <input
-                    className="w-full rounded-[0.7rem] border border-line bg-canvas/35 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
+                    className="w-full rounded-[0.7rem] border border-line bg-canvas/30 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
                     placeholder="Teléfono (opcional)"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                   />
                   {fulfillmentType === 'delivery' ? (
                     <textarea
-                      className="w-full min-h-[42px] rounded-[0.7rem] border border-line bg-canvas/35 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
+                      className="w-full min-h-[42px] rounded-[0.7rem] border border-line bg-canvas/30 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
                       placeholder="Dirección o punto de entrega (delivery)"
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
@@ -1804,7 +1804,7 @@ export function CajaView({
                       {paymentMethod === 'cash' ? (
                         <div className="flex items-center gap-2">
                           <input
-                            className="flex-1 rounded-[0.7rem] border border-line bg-canvas/35 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
+                            className="flex-1 rounded-[0.7rem] border border-line bg-canvas/30 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
                             inputMode="decimal"
                             placeholder="Efectivo recibido (opcional)"
                             value={cashReceivedInput}
@@ -1820,7 +1820,7 @@ export function CajaView({
                             <label className="block">
                               <div className="mb-1 text-[9px] font-black uppercase tracking-wider text-muted">Efectivo</div>
                               <input
-                                className={`w-full rounded-[0.7rem] border bg-canvas/35 px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent ${cashAmount === 0 ? 'border-red-300' : 'border-line'}`}
+                                className={`w-full rounded-[0.7rem] border bg-canvas/30 px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent ${cashAmount === 0 ? 'border-red-300' : 'border-line'}`}
                                 inputMode="decimal"
                                 placeholder="0"
                                 value={cashSplitInput}
@@ -1835,7 +1835,7 @@ export function CajaView({
                           {cashAmount === 0 ? <span className="text-[9px] text-red-500 font-bold block px-1">Efectivo debe ser mayor a 0</span> : null}
                           <div className="flex items-center gap-2">
                             <input
-                              className="flex-1 rounded-[0.7rem] border border-line bg-canvas/35 px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
+                              className="flex-1 rounded-[0.7rem] border border-line bg-canvas/30 px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
                               inputMode="decimal"
                               placeholder="Efectivo recibido (opcional)"
                               value={cashReceivedInput}
@@ -2106,7 +2106,7 @@ export function CajaView({
                       key={option.id}
                       type="button"
                       className={`rounded-[0.9rem] border py-2 text-xs font-bold transition ${
-                        isActive ? 'border-ink bg-ink text-white' : 'border-line bg-panel/85 text-ink hover:bg-panel'
+                        isActive ? 'border-ink bg-ink text-white' : 'border-line bg-panel/80 text-ink hover:bg-panel'
                       }`}
                       onClick={() => {
                         setFastPayMethod(option.id as PaymentMethod)
@@ -2127,7 +2127,7 @@ export function CajaView({
                   <label className="block">
                     <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted">Recibido</div>
                     <input
-                      className="w-full rounded-[0.8rem] border border-line bg-canvas/35 px-3 py-2.5 text-sm text-ink outline-none transition focus:border-accent"
+                      className="w-full rounded-[0.8rem] border border-line bg-canvas/30 px-3 py-2.5 text-sm text-ink outline-none transition focus:border-accent"
                       inputMode="decimal"
                       placeholder="0"
                       value={fastCashReceived}
@@ -2147,7 +2147,7 @@ export function CajaView({
                     <label className="block">
                       <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">Efectivo</div>
                       <input
-                        className="w-full rounded-[0.8rem] border border-line bg-canvas/35 px-2 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
+                        className="w-full rounded-[0.8rem] border border-line bg-canvas/30 px-2 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
                         inputMode="decimal"
                         placeholder="0"
                         value={fastCashSplit}
@@ -2164,7 +2164,7 @@ export function CajaView({
                   <label className="block mt-2">
                     <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">Efectivo Recibido</div>
                     <input
-                      className="w-full rounded-[0.8rem] border border-line bg-canvas/35 px-2 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
+                      className="w-full rounded-[0.8rem] border border-line bg-canvas/30 px-2 py-1.5 text-xs text-ink outline-none transition focus:border-accent"
                       inputMode="decimal"
                       placeholder="0"
                       value={fastCashReceived}
@@ -2245,7 +2245,7 @@ export function CajaView({
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Motivo de Anulacion</label>
               <textarea
-                className="w-full min-h-20 rounded-[1.2rem] border border-line bg-canvas/35 px-3 py-2 text-sm text-ink outline-none transition focus:border-accent"
+                className="w-full min-h-20 rounded-[1.2rem] border border-line bg-canvas/30 px-3 py-2 text-sm text-ink outline-none transition focus:border-accent"
                 placeholder="Ej. Cliente desistio del pedido, error al ingresar items..."
                 value={cancelReason}
                 onChange={(event) => setCancelReason(event.target.value)}

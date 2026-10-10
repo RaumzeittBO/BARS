@@ -9,9 +9,6 @@ const mockLocalStorage = {
   clear: () => { Object.keys(memoryStorage).forEach((k) => delete memoryStorage[k]) },
 }
 try {
-  Object.defineProperty(globalThis, 'window', { value: globalThis, writable: true, configurable: true })
-} catch {}
-try {
   Object.defineProperty(globalThis, 'localStorage', { value: mockLocalStorage, writable: true, configurable: true })
 } catch {}
 
@@ -127,11 +124,17 @@ console.log('   ✓ Fórmulas de caja, arqueo y discriminación de QR validadas 
 
 // 3. PRUEBA DE INVENTARIO Y DESCUENTO AUTOMÁTICO
 console.log('3. Verificando descuento automático de inventario y recetas...')
+barsInventoryService.saveRawMaterial({ id: 'test-pan', name: 'Pan de prueba', unit: 'u', currentStock: 10, minStock: 0 })
+barsInventoryService.saveRawMaterial({ id: 'test-carne', name: 'Carne de prueba', unit: 'u', currentStock: 20, minStock: 0 })
+barsInventoryService.saveRecipe({ productId: 'item-1', ingredients: [
+  { rawMaterialId: 'test-pan', quantity: 1 },
+  { rawMaterialId: 'test-carne', quantity: 2 },
+] })
 const initialMaterials = barsInventoryService.getRawMaterials()
 const initialPanes = initialMaterials.find((m) => m.name.toLowerCase().includes('pan'))?.currentStock || 0
 const initialCarnes = initialMaterials.find((m) => m.name.toLowerCase().includes('carne'))?.currentStock || 0
 
-// Simular pedido de 2 hamburguesas dobles con 'Sin cebolla' y 1 extra de carne
+// Simular pedido de 2 hamburguesas dobles con una receta definida explícitamente.
 const burgerOrder: Order = {
   id: 'ord-inv-test',
   sequence: 3,
@@ -146,7 +149,7 @@ const burgerOrder: Order = {
       quantity: 2,
       lineTotal: 70,
       modifiers: {
-        extras: [{ id: 'ext-1', name: 'Carne extra', price: 10 }],
+        extras: [],
         options: ['Sin cebolla'],
         note: '',
       },
@@ -170,8 +173,7 @@ const newCarnes = updatedMaterials.find((m) => m.name.toLowerCase().includes('ca
 
 // 2 hamburguesas = 2 panes descontados
 assert.equal(newPanes, initialPanes - 2, 'Deben descontarse 2 panes')
-// Doble carne (2x2 = 4) + 1 extra de carne (x2 = 2) = 6 carnes descontadas
-assert.equal(newCarnes, initialCarnes - 6, 'Deben descontarse 6 medallones de carne')
+assert.equal(newCarnes, initialCarnes - 4, 'Deben descontarse 4 porciones de carne de la receta')
 
 // Probar idempotencia (un segundo descuento con el mismo pedido no debe volver a descontar)
 const duplicateDeduction = await barsInventoryService.deductStockForOrder(burgerOrder, 'TestUser')

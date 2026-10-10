@@ -6,27 +6,9 @@ function normalize(value: string) {
   return value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 }
 
-function isBurgerProductName(value: string) {
-  const name = normalize(value).trim()
-  return name.includes('burger')
-    || name.includes('burguer')
-    || name.includes('hamburguesa')
-    || name === 'bbq'
-    || name.startsWith('bbq ')
-}
-
 function canonicalProductKey(name: string, basePrice: number) {
   const normalized = normalize(name).replace(/\s+/g, ' ').trim()
-  if (!isBurgerProductName(normalized)) return `product:${normalized}`
-
-  const brand = /\bbbq\b|barbacoa|barbakoa/.test(normalized) ? 'bbq' : 'burger-lab'
-  const size = /doble|double/.test(normalized) ? 'doble' : 'simple'
-  const withoutFriesPrices = new Set([19, 20, 34, 35])
-  const fries = /sin papas?/.test(normalized) || withoutFriesPrices.has(Number(basePrice))
-    ? 'sin-papas'
-    : 'con-papas'
-
-  return `product:burger:${brand}:${size}:${fries}`
+  return `product:${normalized}:${Number(basePrice)}`
 }
 
 function canonicalExtraKey(name: string) {
@@ -88,35 +70,6 @@ export function getOrderProductTotal(order: Order) {
   }
 
   return Number(order.productSubtotal ?? order.total ?? 0)
-}
-
-export function calculateInventoryUsage(orders: Order[]) {
-  let breads = 0
-  let meats = 0
-
-  orders.filter((order) => order.status !== 'cancelled').forEach((order) => {
-    order.items.forEach((item) => {
-      const name = normalize(item.name)
-      const quantity = item.quantity
-      const isBurger = isBurgerProductName(name)
-      if (isBurger && quantity > 0) breads += quantity
-      if (!isBurger) return
-
-      let baseMeats = 1
-      if (name.includes('cuadruple')) baseMeats = 4
-      else if (name.includes('triple')) baseMeats = 3
-      else if (name.includes('doble') || name.includes('double')) baseMeats = 2
-
-      const extraMeats = (item.modifiers?.extras || []).filter((extra) => {
-        const extraName = normalize(extra.name)
-        return extraName.includes('carne') || extraName.includes('patty') || extraName.includes('patties')
-      }).length
-
-      meats += (baseMeats + extraMeats) * quantity
-    })
-  })
-
-  return { panes: breads, carnes: meats }
 }
 
 export interface ProductSaleRow {

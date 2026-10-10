@@ -166,7 +166,7 @@ export function AdminView({
 
   return (
     <section className="space-y-5">
-      <Panel className="border-white/80 bg-white/68 p-5">
+      <Panel className="border-white/80 bg-white/70 p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">Administracion</p>
@@ -248,10 +248,10 @@ export function AdminView({
               <p className="text-xs text-muted">Crea accesos para caja, cocina, pedidos, operador o administracion.</p>
             </div>
             <div className="grid gap-3">
-              <input className="rounded-xl border border-line bg-canvas/35 px-3 py-2 text-sm outline-none focus:border-accent" placeholder="Email" value={memberForm.email} onChange={(event) => setMemberForm((curr) => ({ ...curr, email: event.target.value }))} />
-              <input className="rounded-xl border border-line bg-canvas/35 px-3 py-2 text-sm outline-none focus:border-accent" placeholder="Nombre visible" value={memberForm.displayName} onChange={(event) => setMemberForm((curr) => ({ ...curr, displayName: event.target.value }))} />
-              <input className="rounded-xl border border-line bg-canvas/35 px-3 py-2 text-sm outline-none focus:border-accent" placeholder="Contrasena temporal" type="password" value={memberForm.password} onChange={(event) => setMemberForm((curr) => ({ ...curr, password: event.target.value }))} />
-              <select className="rounded-xl border border-line bg-canvas/35 px-3 py-2 text-sm outline-none focus:border-accent" value={memberForm.role} onChange={(event) => setMemberForm((curr) => ({ ...curr, role: event.target.value as UserRole }))}>
+              <input className="rounded-xl border border-line bg-canvas/30 px-3 py-2 text-sm outline-none focus:border-accent" placeholder="Email" value={memberForm.email} onChange={(event) => setMemberForm((curr) => ({ ...curr, email: event.target.value }))} />
+              <input className="rounded-xl border border-line bg-canvas/30 px-3 py-2 text-sm outline-none focus:border-accent" placeholder="Nombre visible" value={memberForm.displayName} onChange={(event) => setMemberForm((curr) => ({ ...curr, displayName: event.target.value }))} />
+              <input className="rounded-xl border border-line bg-canvas/30 px-3 py-2 text-sm outline-none focus:border-accent" placeholder="Contrasena temporal" type="password" value={memberForm.password} onChange={(event) => setMemberForm((curr) => ({ ...curr, password: event.target.value }))} />
+              <select className="rounded-xl border border-line bg-canvas/30 px-3 py-2 text-sm outline-none focus:border-accent" value={memberForm.role} onChange={(event) => setMemberForm((curr) => ({ ...curr, role: event.target.value as UserRole }))}>
                 <option value="caja">Caja</option>
                 <option value="cocina">Cocina</option>
                 <option value="pedidos">Pedidos</option>
@@ -295,7 +295,7 @@ export function AdminView({
                     <div className="break-all text-xs text-muted">{member.email}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <select className="rounded-xl border border-line bg-canvas/35 px-2 py-2 text-xs font-semibold" value={member.role} onChange={async (event) => {
+                    <select className="rounded-xl border border-line bg-canvas/30 px-2 py-2 text-xs font-semibold" value={member.role} onChange={async (event) => {
                       await updateRestaurantMember(member.uid, { role: event.target.value as UserRole })
                       await refreshMembers()
                     }}>
@@ -367,7 +367,7 @@ export function AdminView({
                 <label className="block">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Nombre</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                     placeholder="Ej. Classic Cheese"
                     value={productForm.name}
                     onChange={(event) => setProductForm((curr) => ({ ...curr, name: event.target.value }))}
@@ -376,7 +376,7 @@ export function AdminView({
                 <label className="block">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Precio (Bs)</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                     placeholder="Ej. 45"
                     value={productForm.price}
                     onChange={(event) => setProductForm((curr) => ({ ...curr, price: event.target.value }))}
@@ -385,7 +385,7 @@ export function AdminView({
                 <label className="block">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Categoría</span>
                   <select
-                    className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                     value={productForm.categoryId}
                     onChange={(event) => setProductForm((curr) => ({ ...curr, categoryId: event.target.value }))}
                   >
@@ -397,7 +397,7 @@ export function AdminView({
                 <label className="block">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Visual (Emoji o Imagen URL)</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                     placeholder="Ej. 🍔 o http://..."
                     value={productForm.image}
                     onChange={(event) => setProductForm((curr) => ({ ...curr, image: event.target.value }))}
@@ -406,7 +406,7 @@ export function AdminView({
                 <label className="block sm:col-span-2">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Descripción Corta</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                     placeholder="Ej. Doble carne, doble queso cheddar fundido"
                     value={productForm.description}
                     onChange={(event) => setProductForm((curr) => ({ ...curr, description: event.target.value }))}
@@ -415,7 +415,7 @@ export function AdminView({
                 <label className="block">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Etiqueta (Badge - Opcional)</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                     placeholder="Ej. Recomendado, Hot"
                     value={productForm.badge}
                     onChange={(event) => setProductForm((curr) => ({ ...curr, badge: event.target.value }))}
@@ -424,7 +424,7 @@ export function AdminView({
                 <label className="block sm:col-span-2">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Ingredientes Adicionales / Extras (Uno por línea)</span>
                   <textarea
-                    className="mt-1 w-full min-h-16 rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent font-mono"
+                    className="mt-1 w-full min-h-16 rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent font-mono"
                     placeholder="Formato: Nombre|Precio (ej: Bacon|5 o Queso Cheddar|3)"
                     value={productForm.extrasText}
                     onChange={(event) => setProductForm((curr) => ({ ...curr, extrasText: event.target.value }))}
@@ -433,7 +433,7 @@ export function AdminView({
                 <label className="block sm:col-span-2">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Opciones de Preparación / Modificadores (Uno por línea)</span>
                   <textarea
-                    className="mt-1 w-full min-h-16 rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent font-mono"
+                    className="mt-1 w-full min-h-16 rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent font-mono"
                     placeholder="Formato: Nombre opción (ej: Sin Cebolla o Té de Limón)"
                     value={productForm.optionsText}
                     onChange={(event) => setProductForm((curr) => ({ ...curr, optionsText: event.target.value }))}
@@ -627,7 +627,7 @@ export function AdminView({
                 <label className="block">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Nombre</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                     placeholder="Ej. Raza Brangus"
                     value={categoryForm.name}
                     onChange={(event) => setCategoryForm((curr) => ({ ...curr, name: event.target.value }))}
@@ -636,7 +636,7 @@ export function AdminView({
                 <label className="block">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Subtítulo</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                     placeholder="Ej. Hamburguesas premium de raza"
                     value={categoryForm.subtitle}
                     onChange={(event) => setCategoryForm((curr) => ({ ...curr, subtitle: event.target.value }))}
@@ -645,7 +645,7 @@ export function AdminView({
                 <label className="block">
                   <span className="text-[10px] font-black uppercase text-muted tracking-wider">Emoji o Clave de Icono</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                     placeholder="Ej. 🍔"
                     value={categoryForm.emoji}
                     onChange={(event) => setCategoryForm((curr) => ({ ...curr, emoji: event.target.value || 'TAG' }))}
@@ -893,7 +893,7 @@ function QuickExtrasConfig({
             <label className="block">
               <span className="text-[10px] font-black uppercase text-muted tracking-wider">Nombre del extra</span>
               <input
-                className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                 placeholder="Ej. Tocineta, Huevo, Queso Extra"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -906,7 +906,7 @@ function QuickExtrasConfig({
               <input
                 type="number"
                 step="any"
-                className="mt-1 w-full rounded-xl border border-line bg-canvas/35 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
+                className="mt-1 w-full rounded-xl border border-line bg-canvas/30 px-3 py-2 text-xs text-ink outline-none focus:border-accent"
                 placeholder="Ej. 5"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}

@@ -1,5 +1,5 @@
 import { Archive, ChefHat, CreditCard, Menu, Package, Settings2, WalletCards, X, LogOut, User } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { UserRole, View } from '../types'
 import { BarsLogo } from './BarsLogo'
 
@@ -36,14 +36,26 @@ export function TopBar({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const oldOverflow = document.body.style.overflow
+    const oldHtmlOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = oldOverflow
+      document.documentElement.style.overflow = oldHtmlOverflow
+    }
+  }, [mobileMenuOpen])
+
   return (
     <aside
-      className={`sticky top-3 z-40 flex flex-col rounded-3xl border border-[#262626] bg-[#121212]/95 p-3 shadow-card backdrop-blur xl:h-full xl:sticky xl:top-3 ${
+      className={`sticky top-3 z-50 flex flex-col rounded-3xl border border-[#262626] bg-[#121212]/95 p-3 shadow-card xl:h-full xl:sticky xl:top-3 xl:backdrop-blur ${
         collapsed ? 'xl:px-3 xl:py-4' : ''
       }`}
     >
       {/* Cabecera Móvil (sólo visible en pantallas pequeñas) */}
-      <div className="flex items-center justify-between xl:hidden">
+      <div className="relative z-[60] flex items-center justify-between xl:hidden">
         <BarsLogo size="sm" />
 
         <div className="flex items-center gap-2">
@@ -62,8 +74,10 @@ export function TopBar({
         </div>
       </div>
 
-      {/* Cuerpo del menú (visible en desktop, y en móvil si está abierto) */}
-      <div className={`${mobileMenuOpen ? 'mt-4 flex flex-col gap-4' : 'hidden'} xl:flex xl:flex-col xl:flex-1`}>
+      {mobileMenuOpen ? <button type="button" aria-label="Cerrar menú" className="fixed inset-0 z-40 bg-black/70 xl:hidden" onClick={() => setMobileMenuOpen(false)} /> : null}
+
+      {/* En móvil se desplaza el menú, mientras la página queda inmóvil. */}
+      <div className={`${mobileMenuOpen ? 'fixed inset-x-3 bottom-3 top-24 z-50 flex flex-col gap-4 overflow-y-auto overscroll-contain rounded-3xl border border-[#333] bg-[#121212] p-4 shadow-2xl touch-pan-y' : 'hidden'} xl:static xl:inset-auto xl:flex xl:flex-1 xl:flex-col xl:gap-4 xl:overflow-visible xl:rounded-none xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none`}>
         {/* Logo Desktop */}
         <div className={`hidden rounded-2xl border border-[#262626] bg-[#171717] xl:block ${collapsed ? 'p-2.5' : 'p-3.5'}`}>
           <BarsLogo size={collapsed ? 'sm' : 'md'} showSubtitle={!collapsed} />

@@ -161,8 +161,8 @@ export function InventarioView({
               <Boxes size={22} />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Inventario & Recetas</h2>
-              <p className="text-xs text-[#9E9E9E]">Control de materias primas, recetas por producto y descuento automático.</p>
+              <h2 className="text-xl sm:text-2xl font-black text-ink tracking-tight">Inventario & Recetas</h2>
+              <p className="text-xs text-muted">Control de materias primas, recetas por producto y descuento automático.</p>
             </div>
           </div>
         </div>
@@ -222,7 +222,7 @@ export function InventarioView({
                 placeholder="Buscar insumo por nombre o categoría..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-[#2E2E2E] bg-[#141414] py-2.5 pl-10 pr-4 text-xs text-white placeholder-[#555555] outline-none focus:border-[#FF6A00]"
+                className="w-full rounded-2xl border border-[#2E2E2E] bg-[#141414] py-2.5 pl-10 pr-4 text-xs text-white placeholder-[#AFA69E] outline-none focus:border-[#FF6A00]"
               />
             </div>
             <Button size="sm" onClick={openNewMaterial} className="gap-2">
@@ -231,11 +231,11 @@ export function InventarioView({
             </Button>
           </div>
 
-          <Panel className="p-4 border-[#262626] bg-[#141414]">
+          <Panel className="p-4 border-[#262626] bg-[#141414] text-[#E8E2DC]">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#262626] text-[#777777] font-semibold">
+                  <tr className="border-b border-[#262626] text-[#C3BAB2] font-semibold">
                     <th className="pb-3 pl-2">Insumo / Materia Prima</th>
                     <th className="pb-3">Categoría</th>
                     <th className="pb-3 text-right">Stock Actual</th>

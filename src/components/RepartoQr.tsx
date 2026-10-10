@@ -46,7 +46,7 @@ export function RepartoQr({
             className={`rounded-[0.7rem] border px-2.5 py-2 text-xs font-black transition ${
               modo === opcion.id
                 ? 'border-accent bg-accent text-white shadow-sm'
-                : 'border-line bg-canvas/35 text-muted hover:text-ink'
+                : 'border-line bg-canvas/30 text-muted hover:text-ink'
             }`}
           >
             {opcion.etiqueta}
@@ -81,7 +81,7 @@ export function RepartoQr({
               <label key={indice} className="block">
                 <div className="mb-1 text-[9px] font-black uppercase tracking-wider text-muted">Cuenta {indice + 1}</div>
                 <input
-                  className={`w-full rounded-[0.7rem] border bg-canvas/35 px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent ${
+                  className={`w-full rounded-[0.7rem] border bg-canvas/30 px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent ${
                     montoDesdeTexto(monto) > 0 ? 'border-line' : 'border-red-300'
                   }`}
                   inputMode="decimal"

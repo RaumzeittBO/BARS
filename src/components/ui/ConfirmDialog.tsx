@@ -27,7 +27,7 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
-      <Panel className="w-full max-w-lg border-white/90 bg-white/96 p-6 shadow-float">
+      <Panel className="w-full max-w-lg border-white/90 bg-white/95 p-6 shadow-float">
         <div className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Confirmacion</div>
         <h3 className="mt-2 text-2xl font-semibold text-ink">{title}</h3>
         <div className="mt-3 text-sm leading-7 text-muted">{body}</div>

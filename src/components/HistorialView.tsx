@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react'
 import { downloadTextFile, formatCurrency, formatDateTime, formatExtrasList, formatPaymentMethod, formatTime } from '../lib/format'
 import {
   aggregateProductSales,
-  calculateInventoryUsage,
   filterOrdersBySource,
   getOrderProductTotal,
   isOrderDateBetween,
@@ -199,9 +198,6 @@ export function HistorialView({
     }
   }, [selectedDayOrders])
 
-  // Cálculo de Insumos Gastados (Panes y Carnes)
-  const insumos = useMemo(() => calculateInventoryUsage(selectedDayOrders), [selectedDayOrders])
-
   const productSales = useMemo(() => aggregateProductSales(selectedDayOrders), [selectedDayOrders])
 
   const giftOrders = useMemo(
@@ -336,8 +332,6 @@ export function HistorialView({
         ${row(['Pendiente de cobro', summary.pendingPaymentTotal])}
         ${row(['Pedidos activos', summary.orderCount])}
         ${row(['Regalos', giftOrders.length])}
-        ${row(['Panes usados', insumos.panes])}
-        ${row(['Carnes usadas', insumos.carnes])}
       </table>
       <h2>Productos y extras</h2><table>
         ${row(['Tipo', 'Producto o extra', 'Cantidad', 'Ingreso'], true)}
@@ -388,7 +382,7 @@ export function HistorialView({
 
   return (
     <section className="space-y-5">
-      <Panel className="border-white/80 bg-white/68 p-5">
+      <Panel className="border-white/80 bg-white/70 p-5">
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
@@ -574,26 +568,12 @@ export function HistorialView({
               <div className="mt-2 text-xl font-black text-ink">{summary.delivered}</div>
             </div>
 
-            {/* Cálculo de Insumos Gastados */}
-            <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50/80 p-4 shadow-insetSoft">
-              <div className="text-[10px] font-black uppercase tracking-wider text-slate-700">Insumos Gastados</div>
-              <div className="mt-2 flex gap-3">
-                <div>
-                  <div className="text-[9px] font-black text-slate-500 uppercase">Panes</div>
-                  <div className="text-sm font-black text-slate-900">{insumos.panes} u</div>
-                </div>
-                <div>
-                  <div className="text-[9px] font-black text-slate-500 uppercase">Carnes</div>
-                  <div className="text-sm font-black text-slate-900">{insumos.carnes} u</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </Panel>
 
       <div className="grid gap-4 xl:grid-cols-[1.35fr_0.95fr]">
-        <Panel className="border-white/85 bg-white/78 p-5">
+        <Panel className="border-white/85 bg-white/80 p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accentWash text-accent">
               <TrendingUp size={20} />
@@ -605,23 +585,23 @@ export function HistorialView({
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <div className="rounded-[1.3rem] border border-line bg-panel/85 p-4">
+            <div className="rounded-[1.3rem] border border-line bg-panel/80 p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Efectivo cobrado</div>
               <div className="mt-2 text-xl font-semibold text-ink">{formatCurrency(summary.paymentTotals.cashSales)}</div>
             </div>
-            <div className="rounded-[1.3rem] border border-line bg-panel/85 p-4">
+            <div className="rounded-[1.3rem] border border-line bg-panel/80 p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">QR cobrado</div>
               <div className="mt-2 text-xl font-semibold text-ink">{formatCurrency(summary.paymentTotals.qrSales)}</div>
             </div>
-            <div className="rounded-[1.3rem] border border-line bg-panel/85 p-4">
+            <div className="rounded-[1.3rem] border border-line bg-panel/80 p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Pedidos mixtos</div>
               <div className="mt-2 text-xl font-semibold text-ink">{summary.paymentTotals.mixedCount} pedidos</div>
             </div>
-            <div className="rounded-[1.3rem] border border-line bg-panel/85 p-4">
+            <div className="rounded-[1.3rem] border border-line bg-panel/80 p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Recibido efectivo</div>
               <div className="mt-2 text-xl font-semibold text-ink">{formatCurrency(summary.paymentTotals.cashReceived)}</div>
             </div>
-            <div className="rounded-[1.3rem] border border-line bg-panel/85 p-4">
+            <div className="rounded-[1.3rem] border border-line bg-panel/80 p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Cambio entregado</div>
               <div className="mt-2 text-xl font-semibold text-ink">{formatCurrency(summary.paymentTotals.change)}</div>
             </div>
@@ -634,7 +614,7 @@ export function HistorialView({
           </div>
         </Panel>
 
-        <Panel className="border-white/85 bg-white/78 p-5">
+        <Panel className="border-white/85 bg-white/80 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-ink">Productos vendidos</h3>
@@ -668,7 +648,7 @@ export function HistorialView({
             ))}
 
             {productSales.length === 0 ? (
-              <div className="rounded-[1.4rem] border border-dashed border-lineStrong bg-canvas/55 p-6 text-center text-sm text-muted">
+              <div className="rounded-[1.4rem] border border-dashed border-lineStrong bg-canvas/50 p-6 text-center text-sm text-muted">
                 No hay productos registrados en este rango.
               </div>
             ) : null}
@@ -706,7 +686,7 @@ export function HistorialView({
             <button
               key={option.value}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                filter === option.value ? 'bg-ink text-white shadow-card' : 'bg-white/72 text-muted hover:bg-white hover:text-ink'
+                filter === option.value ? 'bg-ink text-white shadow-card' : 'bg-white/70 text-muted hover:bg-white hover:text-ink'
               }`}
               onClick={() => setFilter(option.value)}
             >

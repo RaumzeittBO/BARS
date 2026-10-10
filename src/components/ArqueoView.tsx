@@ -150,8 +150,8 @@ export function ArqueoView({
               <WalletCards size={22} />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Caja & Arqueo de Turno</h2>
-              <p className="text-xs text-[#9E9E9E]">Control de efectivo, salidas menores y conciliación final de caja.</p>
+              <h2 className="text-xl sm:text-2xl font-black text-ink tracking-tight">Caja & Arqueo de Turno</h2>
+              <p className="text-xs text-muted">Control de efectivo, salidas menores y conciliación final de caja.</p>
             </div>
           </div>
         </div>

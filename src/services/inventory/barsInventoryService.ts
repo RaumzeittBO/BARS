@@ -10,6 +10,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { getFirebaseContext } from '../../lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 import type { Order, ProductRecipe, RawMaterial, StockMovement } from '../../types'
 
 const RAW_MATERIALS_KEY = 'bars:raw_materials'
@@ -17,16 +18,8 @@ const RECIPES_KEY = 'bars:product_recipes'
 const MOVEMENTS_KEY = 'bars:stock_movements'
 const DEDUCTED_ORDERS_KEY = 'bars:deducted_orders'
 
-const INITIAL_RAW_MATERIALS: RawMaterial[] = [
-  { id: 'mat-1', name: 'Pan de Hamburguesa', unit: 'u', currentStock: 100, minStock: 25, costPerUnit: 1.5, category: 'Panadería', updatedAt: new Date().toISOString() },
-  { id: 'mat-2', name: 'Medallón de Carne BARS (120g)', unit: 'u', currentStock: 90, minStock: 20, costPerUnit: 5.0, category: 'Carnes', updatedAt: new Date().toISOString() },
-  { id: 'mat-3', name: 'Lámina de Queso Cheddar', unit: 'u', currentStock: 120, minStock: 30, costPerUnit: 1.2, category: 'Lácteos', updatedAt: new Date().toISOString() },
-  { id: 'mat-4', name: 'Porción de Tocino Ahumado', unit: 'porcion', currentStock: 60, minStock: 15, costPerUnit: 2.0, category: 'Carnes', updatedAt: new Date().toISOString() },
-  { id: 'mat-5', name: 'Salsa Especial BARS', unit: 'ml', currentStock: 3000, minStock: 500, costPerUnit: 0.05, category: 'Salsas', updatedAt: new Date().toISOString() },
-  { id: 'mat-6', name: 'Cebolla Caramelizada', unit: 'porcion', currentStock: 50, minStock: 10, costPerUnit: 1.0, category: 'Verduras', updatedAt: new Date().toISOString() },
-  { id: 'mat-7', name: 'Papas Bastón Prefritas', unit: 'porcion', currentStock: 80, minStock: 20, costPerUnit: 3.5, category: 'Guarniciones', updatedAt: new Date().toISOString() },
-  { id: 'mat-8', name: 'Gaseosa 500ml', unit: 'u', currentStock: 48, minStock: 12, costPerUnit: 4.0, category: 'Bebidas', updatedAt: new Date().toISOString() },
-]
+// El inventario real comienza vacío: una carta no indica existencias ni cantidades de receta.
+const INITIAL_RAW_MATERIALS: RawMaterial[] = []
 
 class BarsInventoryService {
   private materials: RawMaterial[] = []
@@ -36,10 +29,19 @@ class BarsInventoryService {
   private listeners: Array<() => void> = []
   private unsubscribers: Unsubscribe[] = []
   private syncInitialized = false
+  private authUnsubscribe: Unsubscribe | null = null
 
   constructor() {
     this.loadLocalData()
-    void this.initFirestoreSync()
+    if (typeof window !== 'undefined') {
+      void getFirebaseContext().then((context) => {
+        if (!context) return
+        this.authUnsubscribe = onAuthStateChanged(context.auth, (user) => {
+          this.stopFirestoreSync()
+          if (user) void this.initFirestoreSync()
+        })
+      })
+    }
   }
 
   private loadLocalData() {
@@ -76,20 +78,9 @@ class BarsInventoryService {
       // 1. Sincronizar insumos / materias primas
       const materialsRef = collection(context.db, 'restaurants', context.restaurantId, 'inventory_materials')
       const unsubMaterials = onSnapshot(materialsRef, (snapshot) => {
-        if (!snapshot.empty) {
-          const list: RawMaterial[] = []
-          snapshot.forEach((docSnap) => {
-            list.push(docSnap.data() as RawMaterial)
-          })
-          this.materials = list
-          this.saveMaterialsLocal()
-          this.notify()
-        } else if (this.materials.length > 0) {
-          // Inicializar en Firestore con los insumos iniciales si está vacía
-          for (const mat of this.materials) {
-            void setDoc(doc(context.db, 'restaurants', context.restaurantId, 'inventory_materials', mat.id), mat).catch(() => undefined)
-          }
-        }
+        this.materials = snapshot.docs.map((entry) => entry.data() as RawMaterial)
+        this.saveMaterialsLocal()
+        this.notify()
       }, (err) => {
         console.warn('Inventory materials firestore sync notice:', err.message)
       })
@@ -116,14 +107,12 @@ class BarsInventoryService {
       // 3. Sincronizar recetas
       const recipesRef = collection(context.db, 'restaurants', context.restaurantId, 'inventory_recipes')
       const unsubRecipes = onSnapshot(recipesRef, (snapshot) => {
-        if (!snapshot.empty) {
-          snapshot.forEach((docSnap) => {
-            const recipe = docSnap.data() as ProductRecipe
-            this.recipes.set(recipe.productId, recipe)
-          })
-          this.saveRecipesLocal()
-          this.notify()
-        }
+        this.recipes = new Map(snapshot.docs.map((entry) => {
+          const recipe = entry.data() as ProductRecipe
+          return [recipe.productId, recipe]
+        }))
+        this.saveRecipesLocal()
+        this.notify()
       }, (err) => {
         console.warn('Inventory recipes firestore sync notice:', err.message)
       })
@@ -145,6 +134,12 @@ class BarsInventoryService {
     } catch (e) {
       console.warn('Failed to initialize Firestore inventory sync:', e)
     }
+  }
+
+  private stopFirestoreSync() {
+    this.unsubscribers.forEach((unsub) => unsub())
+    this.unsubscribers = []
+    this.syncInitialized = false
   }
 
   private notify() {
@@ -394,56 +389,6 @@ class BarsInventoryService {
           }
           addDeduction(ing.rawMaterialId, ing.quantity * itemQty)
         }
-      } else {
-        const lowerName = item.name.toLowerCase()
-        const isBurger = lowerName.includes('hamburguesa') || lowerName.includes('burger') || lowerName.includes('clasica') || lowerName.includes('bacon')
-
-        if (isBurger) {
-          const pan = this.materials.find((m) => m.name.toLowerCase().includes('pan'))
-          if (pan) addDeduction(pan.id, 1 * itemQty)
-
-          const carne = this.materials.find((m) => m.name.toLowerCase().includes('carne'))
-          if (carne) {
-            let numCarnes = 1
-            if (lowerName.includes('cuadruple')) numCarnes = 4
-            else if (lowerName.includes('triple')) numCarnes = 3
-            else if (lowerName.includes('doble') || lowerName.includes('double')) numCarnes = 2
-            addDeduction(carne.id, numCarnes * itemQty)
-          }
-
-          const queso = this.materials.find((m) => m.name.toLowerCase().includes('queso'))
-          if (queso) addDeduction(queso.id, 1 * itemQty)
-
-          const sinCebolla = item.modifiers.options.some((opt) => opt.toLowerCase().includes('sin cebolla'))
-          const cebolla = this.materials.find((m) => m.name.toLowerCase().includes('cebolla'))
-          if (cebolla && !sinCebolla) addDeduction(cebolla.id, 1 * itemQty)
-        }
-
-        if (lowerName.includes('papa') || lowerName.includes('combo')) {
-          const papas = this.materials.find((m) => m.name.toLowerCase().includes('papa'))
-          if (papas) addDeduction(papas.id, 1 * itemQty)
-        }
-
-        if (lowerName.includes('soda') || lowerName.includes('gaseosa') || lowerName.includes('coca') || lowerName.includes('combo')) {
-          const bebida = this.materials.find((m) => m.name.toLowerCase().includes('gaseosa'))
-          if (bebida) addDeduction(bebida.id, 1 * itemQty)
-        }
-      }
-
-      if (item.modifiers.extras && item.modifiers.extras.length > 0) {
-        for (const extra of item.modifiers.extras) {
-          const extraLower = extra.name.toLowerCase()
-          if (extraLower.includes('carne')) {
-            const carne = this.materials.find((m) => m.name.toLowerCase().includes('carne'))
-            if (carne) addDeduction(carne.id, 1 * itemQty)
-          } else if (extraLower.includes('queso')) {
-            const queso = this.materials.find((m) => m.name.toLowerCase().includes('queso'))
-            if (queso) addDeduction(queso.id, 1 * itemQty)
-          } else if (extraLower.includes('tocino') || extraLower.includes('bacon')) {
-            const tocino = this.materials.find((m) => m.name.toLowerCase().includes('tocino'))
-            if (tocino) addDeduction(tocino.id, 1 * itemQty)
-          }
-        }
       }
     }
 
@@ -519,9 +464,9 @@ class BarsInventoryService {
   }
 
   destroy() {
-    this.unsubscribers.forEach((unsub) => unsub())
-    this.unsubscribers = []
-    this.syncInitialized = false
+    this.authUnsubscribe?.()
+    this.authUnsubscribe = null
+    this.stopFirestoreSync()
   }
 }
 

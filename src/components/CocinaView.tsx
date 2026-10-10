@@ -98,7 +98,7 @@ export function CocinaView({
 
   return (
     <section className="space-y-5">
-      <Panel className="border-white/80 bg-white/68 p-5">
+      <Panel className="border-white/80 bg-white/70 p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">Cocina</p>
