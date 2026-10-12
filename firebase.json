@@ -10,6 +10,15 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "headers": [
+      {
+        "source": "/updates/bars/update.json",
+        "headers": [
+          { "key": "Access-Control-Allow-Origin", "value": "*" },
+          { "key": "Cache-Control", "value": "no-store, max-age=0" }
+        ]
+      }
+    ],
     "rewrites": [
       {
         "source": "**",
