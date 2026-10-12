@@ -1,4 +1,5 @@
 import { collection, deleteDoc, doc, onSnapshot, setDoc, type Unsubscribe } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
 import { getFirebaseContext } from '../../lib/firebase'
 import type { BarsCustomer } from '../../types'
 
@@ -11,7 +12,21 @@ class BarsCustomerService {
 
   constructor() {
     try { this.customers = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { this.customers = [] }
-    void this.startSync()
+    if (typeof window !== 'undefined') {
+      void getFirebaseContext().then((context) => {
+        if (!context) return
+        onAuthStateChanged(context.auth, (user) => {
+          this.unsubscribe?.()
+          this.unsubscribe = null
+          if (user) void this.startSync()
+          else {
+            this.customers = []
+            this.saveLocal()
+            this.notify()
+          }
+        })
+      })
+    }
   }
 
   private notify() { this.listeners.forEach(listener => listener()) }
@@ -20,10 +35,13 @@ class BarsCustomerService {
   getAll() { return [...this.customers] }
   async startSync() {
     const context = await getFirebaseContext()
-    if (!context || this.unsubscribe) return
+    if (!context?.auth.currentUser || this.unsubscribe) return
     this.unsubscribe = onSnapshot(collection(context.db, 'restaurants', context.restaurantId, 'customers'), snapshot => {
       this.customers = snapshot.docs.map(item => ({ id: item.id, ...item.data() } as BarsCustomer))
       this.saveLocal(); this.notify()
+    }, (error) => {
+      console.warn('BARS customers sync notice:', error.message)
+      this.unsubscribe = null
     })
   }
   async save(input: Omit<BarsCustomer, 'id' | 'createdAt' | 'updatedAt'>, id?: string) {

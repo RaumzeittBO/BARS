@@ -31,6 +31,7 @@ export function BarsUpdaterModal({
 
   const check = async () => {
     setIsChecking(true)
+    setUpdateResult(null)
     setErrorMessage(null)
     setSuccessMessage(null)
     try {
@@ -107,6 +108,12 @@ export function BarsUpdaterModal({
             <div className="py-8 text-center text-xs text-[#9E9E9E] space-y-2">
               <LoaderCircle size={28} className="animate-spin text-[#FF6A00] mx-auto" />
               <p>Consultando servidor de actualizaciones BARS...</p>
+            </div>
+          ) : ((errorMessage && !updateResult?.hasUpdate) || updateResult?.checkFailed) ? (
+            <div className="space-y-3 rounded-2xl border border-rose-800 bg-rose-950/30 p-4 text-sm text-rose-200">
+              <div className="flex items-center gap-2 font-bold"><AlertCircle size={18} /> No se pudo comprobar la actualización</div>
+              <p className="text-xs">{errorMessage || updateResult?.message}</p>
+              <Button size="sm" tone="secondary" onClick={check}>Volver a comprobar</Button>
             </div>
           ) : updateResult?.hasUpdate ? (
             <div className="space-y-4">

@@ -16,6 +16,7 @@ export interface BarsUpdateManifest {
 
 export interface UpdateCheckResult {
   hasUpdate: boolean
+  checkFailed?: boolean
   isMandatory: boolean
   installedVersion: InstalledAppVersion
   availableManifest?: BarsUpdateManifest
@@ -37,6 +38,7 @@ class BarsUpdateService {
     try {
       return await BarsUpdater.getInstalledVersion()
     } catch {
+      if (this.isAndroid()) throw new Error('No se pudo leer la versión Android instalada de BARS.')
       return { packageName: 'net.pachax.bars', versionName: '1.0.0-web', versionCode: 1 }
     }
   }
@@ -75,6 +77,9 @@ class BarsUpdateService {
       if (manifest.packageName !== 'net.pachax.bars') {
         throw new Error('El manifiesto no corresponde al paquete autorizado de BARS (net.pachax.bars).')
       }
+      if (!Number.isSafeInteger(manifest.versionCode) || manifest.versionCode < 1) {
+        throw new Error('La versión publicada en Firebase no es válida.')
+      }
 
       const hasUpdate = manifest.versionCode > installed.versionCode
       const isMandatory = Boolean(manifest.isMandatory || manifest.minSupportedVersionCode > installed.versionCode)
@@ -91,6 +96,7 @@ class BarsUpdateService {
     } catch (err: any) {
       return {
         hasUpdate: false,
+        checkFailed: true,
         isMandatory: false,
         installedVersion: installed,
         message: `No se pudieron consultar actualizaciones: ${err?.message || 'Error de conexión'}.`,
@@ -113,6 +119,10 @@ class BarsUpdateService {
       const perm = await BarsUpdater.checkInstallPermission()
       if (!perm.granted) {
         await BarsUpdater.requestInstallPermission()
+        return {
+          success: false,
+          error: 'Autoriza instalar aplicaciones desde BARS en Android, vuelve a la app y pulsa Descargar e Instalar otra vez.',
+        }
       }
 
       // 2. Descargar actualización

@@ -1,12 +1,12 @@
 {
   "packageName": "net.pachax.bars",
-  "versionName": "1.0.1",
-  "versionCode": 2,
+  "versionName": "1.0.2",
+  "versionCode": 3,
   "minSupportedVersionCode": 1,
   "isMandatory": false,
-  "releaseDate": "2026-10-10T01:45:20Z",
-  "apkUrl": "https://bars-f911d.web.app/updates/bars/apk/bars-1.0.1.apk",
-  "apkSizeBytes": 3885369,
-  "apkSha256": "6d02b7a9053473867432397fdf7dfa49cbb872e0de62265aa52079d7d6e90e30",
-  "releaseNotes": "Carta oficial BARS, controles legibles, navegación móvil corregida y sincronización de inventario tras iniciar sesión."
+  "releaseDate": "2026-10-12T23:22:21Z",
+  "apkUrl": "https://bars-f911d.web.app/updates/bars/apk/bars-1.0.2.apk",
+  "apkSizeBytes": 3888353,
+  "apkSha256": "6e811e04bfbfbafc0e340f6b75c454607e54ac67bd80465f63a06506c982e52f",
+  "releaseNotes": "Clientes y ranking de consumo, recetas con unidades, sincronización de clientes y mejoras al comprobador de actualizaciones."
 }

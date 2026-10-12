@@ -112,6 +112,7 @@ service cloud.firestore {
           'tableInfo',
           'customerName',
           'customerPhone',
+          'customerId',
           'whatsappChatId',
           'deliveryAddress',
           'suppressWhatsappDispatchNotice',
@@ -137,6 +138,7 @@ service cloud.firestore {
         && (!('tableInfo' in request.resource.data) || request.resource.data.tableInfo is string)
         && (!('customerName' in request.resource.data) || request.resource.data.customerName is string)
         && (!('customerPhone' in request.resource.data) || request.resource.data.customerPhone is string)
+        && (!('customerId' in request.resource.data) || request.resource.data.customerId is string)
         && (!('whatsappChatId' in request.resource.data) || request.resource.data.whatsappChatId is string)
         && (!('deliveryAddress' in request.resource.data) || request.resource.data.deliveryAddress is string)
         && (!('suppressWhatsappDispatchNotice' in request.resource.data) || request.resource.data.suppressWhatsappDispatchNotice is bool)
@@ -278,6 +280,7 @@ service cloud.firestore {
           'tableInfo',
           'customerName',
           'customerPhone',
+          'customerId',
           'whatsappChatId',
           'deliveryAddress',
           'suppressWhatsappDispatchNotice',
@@ -289,6 +292,7 @@ service cloud.firestore {
         && request.resource.data.total >= 0
         && request.resource.data.paymentStatus in ['paid', 'pending', 'gift']
         && (!('whatsappChatId' in request.resource.data) || request.resource.data.whatsappChatId is string)
+        && (!('customerId' in request.resource.data) || request.resource.data.customerId is string)
         && request.resource.data.orderSource in ['local', 'whatsapp']
         && (request.resource.data.paymentMethod == null || request.resource.data.paymentMethod in ['cash', 'qr', 'mixed'])
         && (request.resource.data.expectedPaymentMethod == null || request.resource.data.expectedPaymentMethod in ['cash', 'qr', 'mixed'])

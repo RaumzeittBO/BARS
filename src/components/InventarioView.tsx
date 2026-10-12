@@ -389,24 +389,11 @@ export function InventarioView({
                     </div>
 
                     <div className="rounded-2xl bg-[#18181A] p-4 border border-[#2E2E2E] space-y-3">
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">Insumos Base Deducidos</h4>
-                      <div className="space-y-2">
-                        {materials.slice(0, 4).map((mat) => (
-                          <div key={mat.id} className="flex items-center justify-between text-xs py-1 border-b border-[#242424]">
-                            <span className="text-[#CCCCCC]">{mat.name}</span>
-                            <span className="font-mono font-bold text-[#FF6A00]">1 {mat.unit} por producto</span>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-[11px] text-[#777777] italic">
-                        * El sistema detecta automáticamente hamburguesas dobles/triples multiplicando la carne y el queso, y omite insumos cuando el cliente pide "Sin salsa", "Sin cebolla", etc.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-[#18181A] p-4 border border-[#2E2E2E] space-y-3">
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-bold text-white uppercase tracking-wider">Editar receta conectada</h4>
                         <button onClick={() => setRecipeIngredients((current) => [...current, { rawMaterialId: materials[0]?.id || '', quantity: 1, unit: materials[0]?.unit }])} disabled={!materials.length} className="rounded-xl bg-[#FF6A00] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-40">+ Insumo</button>
                       </div>
+                      <p className="text-[11px] text-[#AAAAAA]">Solo se descontarán los insumos y cantidades que guardes aquí para este producto.</p>
                       {recipeIngredients.map((ingredient, index) => (
                         <div key={`${ingredient.rawMaterialId}-${index}`} className="flex items-center gap-2">
                           <select value={ingredient.rawMaterialId} onChange={(event) => setRecipeIngredients((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, rawMaterialId: event.target.value } : item))} className="min-w-0 flex-1 rounded-xl border border-[#333] bg-[#101010] p-2 text-xs text-white">
